@@ -1,0 +1,1199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EU Steel Quota Monitor</title>
+<style>
+  :root{
+    /* theme: blue · wine · gold · gray */
+    --navy:#0B4F7C; --navy-2:#1F7FB5; --sky:#7CC3E3;
+    --wine:#860A1E; --wine-2:#A3172D; --wine-soft:#F6E4E7;
+    --gold:#B8892B; --gold-2:#E9D9A6; --cream:#F6EFDF;
+    --bg:#F2F3F5; --card:#fff; --line:#E1E4E8;
+    --text:#1B2433; --muted:#5F6773; --soft:#ECEEF1;
+    --teal:#1A6FA3; --teal-soft:#9CCDEA;
+    --ok:#1A6FA3; --ok-bg:#E3F0F8;
+    --watch:#B8892B; --watch-bg:#F7EED6;
+    --crit:#D2482F; --crit-bg:#FBE8E3;
+    --exh:#860A1E; --exh-bg:#F6E4E7;
+    --err:#6B7280; --err-bg:#ECEEF1;
+    --tr:#860A1E; --tr-bg:#F6EFDF;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;font-size:14px;line-height:1.5}
+  a{color:var(--teal)}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+
+  header{background:linear-gradient(110deg,var(--navy) 0%,var(--navy-2) 62%,var(--sky) 100%);color:#fff;padding:22px 0 16px;border-bottom:4px solid var(--wine)}
+  .brand{display:flex;align-items:center;gap:14px}
+  .logo{width:42px;height:42px;border:0;background:var(--wine);border-radius:50%;display:grid;place-items:center;font-weight:800;color:var(--gold-2);letter-spacing:.5px}
+  .eyebrow{font-size:10.5px;letter-spacing:2px;font-weight:700;color:var(--gold-2)}
+  .brand h1{margin:0;font-size:24px;letter-spacing:-.3px}
+  .brand h1 small{font-size:12px;font-weight:500;color:#d6ebf6;margin-left:6px}
+  .hdr-meta{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px;font-size:12.5px;color:#e6f2fa}
+  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;background:#94a3b8;vertical-align:middle}
+  .dot.live{background:var(--gold-2);box-shadow:0 0 0 3px rgba(233,217,166,.3)}
+  .dot.snap{background:#cfd4da}
+  .hdr-meta b{color:#fff}
+
+  .tabs{display:flex;gap:4px;background:#E4E6EA;padding:4px;border-radius:12px;margin:20px 0 22px;overflow-x:auto}
+  .tabs button{flex:1;min-width:120px;border:0;background:transparent;padding:10px 12px;border-radius:9px;font:inherit;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap}
+  .tabs button.on{background:#fff;color:var(--wine);font-weight:800;box-shadow:0 1px 3px rgba(134,10,30,.15)}
+
+  .sec-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+  .kicker{font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--wine)}
+  h2{margin:2px 0 6px;font-size:24px;letter-spacing:-.4px;color:var(--navy)}
+  .sub{color:var(--muted);font-size:13px}
+  .meta{color:var(--muted);font-size:12px;margin-top:8px}
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  select,input[type=search]{font:inherit;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--text)}
+  .btn{border:0;background:var(--teal);color:#fff;font:inherit;font-weight:700;padding:10px 16px;border-radius:10px;cursor:pointer;white-space:nowrap;text-decoration:none;display:inline-block}
+  .btn:disabled{opacity:.55;cursor:progress}
+  .btn.ghost{background:#fff;color:var(--teal);border:1px solid var(--teal-soft)}
+  .notice{margin:14px 0 0;padding:11px 14px;border-radius:10px;background:var(--ok-bg);color:var(--navy);font-size:13px}
+  .notice.warn{background:var(--cream);color:#7a5a12;border-left:4px solid var(--gold)}
+  .notice.err{background:var(--wine-soft);color:var(--wine);border-left:4px solid var(--wine)}
+
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0}
+  .kpi{background:var(--cream);border-color:#EADFC4;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+  .kpi b{display:block;font-size:26px;letter-spacing:-.5px}
+  .kpi b:not([class]){color:var(--wine)}
+  .kpi span{color:var(--muted);font-size:12.5px}
+  .kpi b small{font-size:13px;color:var(--muted);font-weight:500}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+  .fine{font-size:11.5px;color:var(--muted)}
+
+  .badge{display:inline-block;font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .s-OK{color:var(--ok);background:var(--ok-bg)}
+  .s-Watch{color:var(--watch);background:var(--watch-bg)}
+  .s-Critical{color:var(--crit);background:var(--crit-bg)}
+  .s-Exhausted{color:var(--exh);background:var(--exh-bg)}
+  .s-Error{color:var(--err);background:var(--err-bg)}
+  .s-None{color:var(--muted);background:var(--soft)}
+  .c-OK{color:var(--ok)} .c-Watch{color:var(--watch)} .c-Critical{color:var(--crit)} .c-Exhausted{color:var(--exh)} .c-Error{color:var(--err)}
+
+  .pbar{position:relative;height:8px;background:var(--soft);border-radius:999px;overflow:hidden}
+  .pbar i{position:absolute;top:0;bottom:0;left:0}
+  .pbar .aw{opacity:.45}
+
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-2px}
+
+  /* Türkiye highlight */
+  tr.o-tr td{background:var(--tr-bg)}
+  tr.o-tr td:first-child{box-shadow:inset 4px 0 0 var(--tr)}
+  tr.o-tr td.org{color:var(--tr);font-weight:800}
+  .tag-tr{display:inline-block;margin-left:6px;font-size:10.5px;font-weight:700;color:var(--tr);border:1px solid #e3b3bb;background:#fff;border-radius:999px;padding:1px 7px}
+
+  /* category picker */
+  .cat-pick{display:flex;flex-direction:column;gap:6px;margin-top:16px;max-width:620px}
+  .cat-pick span{font-size:12px;font-weight:700;color:var(--muted)}
+  .cat-pick select{width:100%;font-size:15px;font-weight:600;padding:12px 14px;border:1.5px solid var(--gold);border-radius:12px;cursor:pointer}
+
+  /* tables */
+  .tbl-wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);margin-top:12px}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:860px}
+  th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;vertical-align:middle}
+  th{font-size:11.5px;color:#fff;font-weight:700;background:var(--wine);border-bottom-color:var(--wine-2);position:sticky;top:0;cursor:pointer;user-select:none}
+  th.nosort{cursor:default}
+  th.num,td.num{text-align:right;font-variant-numeric:tabular-nums}
+  th .arr{opacity:.5;margin-left:3px}
+  td .pbar{width:110px;display:inline-block;vertical-align:middle;margin-right:8px}
+  td.util{min-width:180px}
+  .empty{padding:30px;text-align:center;color:var(--muted)}
+
+  /* Türkiye overview table */
+  #trTable{min-width:980px}
+  #trTable th.grp{text-align:center;font-size:11px;letter-spacing:1px;cursor:default}
+  #trTable th.grp.own{color:var(--gold-2);background:var(--wine-2)}
+  #trTable th.grp{background:var(--wine-2)}
+  #trTable td.sep,#trTable th.sep{border-left:2px solid var(--line)}
+  #trTable tr.row{cursor:pointer}
+  #trTable tr.row:hover td{background:#F7F8FA}
+  .prod b{display:block}
+  .prod span{font-size:11.5px;color:var(--muted)}
+  .cell b{font-variant-numeric:tabular-nums}
+  .cell .ln{font-size:11px;color:var(--muted)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px}
+  .chip{border:1px solid var(--gold-2);background:#fff;color:var(--wine);font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:999px;cursor:pointer}
+  .chip.on{background:var(--wine);border-color:var(--wine);color:#fff}
+
+  /* country view: bar chart */
+  .card-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .card-h h3{margin:0;font-size:16px}
+  .chart{overflow-x:auto;margin-top:10px;padding-bottom:6px}
+  .plot{position:relative;display:flex;gap:6px;padding:22px 4px 0 34px;min-width:max-content}
+  .gl{position:absolute;left:34px;right:0;border-top:1px dashed #d5dde3;font-size:10px;color:#94a3b8}
+  .gl span{position:absolute;left:-32px;top:-7px;width:28px;text-align:right}
+  .gl.l100{border-top:1.5px solid var(--wine)}
+  .col{width:66px;flex:0 0 66px;display:flex;flex-direction:column;align-items:center;cursor:pointer}
+  .col .pct{font-size:11.5px;font-weight:700;height:18px}
+  .col .bararea{position:relative;width:30px;height:190px;background:linear-gradient(#f7f9fa,#f7f9fa) center/1px 100% no-repeat}
+  .col .seg{position:absolute;left:0;right:0;border-radius:3px 3px 0 0}
+  .col .lab{font-size:11px;text-align:center;margin-top:6px;line-height:1.3;color:var(--text);font-weight:700}
+  .col .lab em{display:block;font-style:normal;font-weight:500;color:var(--muted);font-size:10.5px}
+  .col:hover .bararea{background:linear-gradient(#eef3f6,#eef3f6)}
+  .col.alt .lab em{color:var(--gold)}
+  .scale-note{font-size:11px;color:var(--muted);margin-top:4px}
+
+  /* country view: order cards */
+  .grid-h{display:flex;justify-content:space-between;align-items:baseline;margin:26px 0 10px}
+  .grid-h h3{margin:0;font-size:16px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px}
+  .oc{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;scroll-margin-top:16px;transition:box-shadow .3s}
+  .oc.flash{box-shadow:0 0 0 3px var(--teal-soft)}
+  .oc.o-tr{border-left:5px solid var(--tr)}
+  .oc-h{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+  .oc-h h4{margin:0;font-size:14.5px}
+  .oc-h p{margin:2px 0 0;font-size:12px;color:var(--muted)}
+  .big{font-size:30px;font-weight:800;letter-spacing:-.8px;margin:10px 0 2px}
+  .big small{font-size:12px;font-weight:500;color:var(--muted);letter-spacing:0;margin-left:4px}
+  .triple{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+  .triple span{display:block;font-size:11px;color:var(--muted)}
+  .triple b{font-size:14px}
+  .oc-f{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);margin-top:10px;padding-top:9px;font-size:12px}
+
+  .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px}
+  .filters input[type=search]{flex:1;min-width:220px}
+
+  .help{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .help h4{margin:0 0 8px;font-size:15px;color:var(--wine)}
+  .help ul{margin:0;padding-left:18px;color:#3a4250}
+  .help li{margin-bottom:5px}
+  code{background:var(--soft);padding:1px 6px;border-radius:5px;font-size:12.5px}
+
+  footer{color:var(--muted);font-size:12px;text-align:center;padding:34px 0 40px}
+  .hidden{display:none!important}
+
+  @media (max-width:760px){
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .help{grid-template-columns:1fr}
+    .wrap{padding:0 16px}
+    h2{font-size:21px}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="brand">
+      <div class="logo">EU</div>
+      <div>
+        <div class="eyebrow">STEEL TRADE MONITOR · ISTANBUL</div>
+        <h1>EU Steel Quota <small>Safeguard · TARIC</small></h1>
+      </div>
+    </div>
+    <div class="hdr-meta">
+      <span><span id="modeDot" class="dot"></span><span id="modeText">Checking connection…</span></span>
+      <span id="periodText"></span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="notice warn hidden" id="globalNotice"></div>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="turkiye">Türkiye Overview</button>
+    <button data-tab="country">By Country</button>
+    <button data-tab="category">By Category</button>
+    <button data-tab="all">All Orders</button>
+    <button data-tab="help">How to Read</button>
+  </nav>
+
+  <!-- Türkiye overview -->
+  <section id="tab-turkiye">
+    <div class="sec-head">
+      <div>
+        <div class="kicker">TÜRKİYE</div>
+        <h2>Quotas for Turkish-origin steel</h2>
+        <div class="sub">Per category: the Türkiye-specific quota and the backup quota Türkiye can use. Click a row to see all countries in that category.</div>
+      </div>
+      <div class="controls">
+        <button class="btn liveonly" id="trRefresh">↻ Refresh</button>
+        <a class="btn ghost liveonly" id="exportBtn" href="/api/export_en">⬇ Shareable file</a>
+      </div>
+    </div>
+    <div class="meta" id="trMeta"></div>
+    <div class="kpis" id="trKpis"></div>
+    <div class="chips" id="trChips">
+      <button class="chip on" data-f="all">All categories</button>
+      <button class="chip" data-f="own">With Türkiye quota</button>
+      <button class="chip" data-f="alert">Türkiye quota ≥80%</button>
+      <button class="chip" data-f="avail">Türkiye quota still open</button>
+    </div>
+    <div class="tbl-wrap"><table id="trTable"></table></div>
+    <div class="legend">
+      <span><i style="background:var(--ok)"></i>OK &lt;80%</span>
+      <span><i style="background:var(--watch)"></i>Watch 80–90%</span>
+      <span><i style="background:var(--crit)"></i>Critical 90–100%</span>
+      <span><i style="background:var(--exh)"></i>Exhausted ≥100%</span>
+      <span>Light part of bar = Awaiting (pending requests)</span>
+    </div>
+  </section>
+
+  <!-- By country -->
+  <section id="tab-country" class="hidden">
+    <div class="sec-head">
+      <div>
+        <div class="kicker" id="ctryKicker">COUNTRY</div>
+        <h2 id="ctryTitle"></h2>
+        <div class="sub" id="ctrySub"></div>
+      </div>
+      <div class="controls">
+        <select id="countrySel" aria-label="Select country"></select>
+        <button class="btn liveonly" id="ctryRefresh">↻ Refresh</button>
+      </div>
+    </div>
+    <div class="meta" id="ctryMeta"></div>
+    <div class="kpis" id="ctryKpis"></div>
+
+    <div class="card">
+      <div class="card-h">
+        <h3>Quota utilisation</h3>
+        <span class="fine">Utilisation = (Used + Awaiting) ÷ Quota</span>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--teal)"></i>Used</span>
+        <span><i style="background:var(--teal);opacity:.4"></i>Awaiting allocation</span>
+        <span><i style="background:var(--wine)"></i>100% line</span>
+        <span>Scroll sideways to compare · click a bar to jump to its card</span>
+      </div>
+      <div class="chart"><div class="plot" id="ctryChart"></div></div>
+      <div class="scale-note">Vertical axis 0–125% · bars above 125% are cut off · <span style="color:var(--gold);font-weight:700">gold label</span> = no own quota, residual quota shown instead</div>
+    </div>
+
+    <div class="grid-h">
+      <h3>Order details</h3>
+      <span class="fine">Volumes in tonnes (t)</span>
+    </div>
+    <div class="cards" id="ctryCards"></div>
+  </section>
+
+  <!-- Category -->
+  <section id="tab-category" class="hidden">
+    <div class="sec-head">
+      <div>
+        <div class="kicker" id="catKicker">CATEGORY</div>
+        <h2 id="catTitle"></h2>
+        <div class="sub" id="catSub"></div>
+      </div>
+      <div class="controls">
+        <button class="btn liveonly" id="catRefresh">↻ Refresh</button>
+      </div>
+    </div>
+    <label class="cat-pick">
+      <span>Select category</span>
+      <select id="catSel" aria-label="Select category"></select>
+    </label>
+    <div class="legend">
+      <span><i style="background:var(--tr)"></i>Türkiye quota · other quota usable by Türkiye</span>
+    </div>
+    <div class="meta" id="catMeta"></div>
+    <div class="kpis" id="catKpis"></div>
+    <div class="tbl-wrap"><table id="catTable"></table></div>
+  </section>
+
+  <!-- All -->
+  <section id="tab-all" class="hidden">
+    <div class="sec-head">
+      <div>
+        <div class="kicker">ALL ORDERS</div>
+        <h2>Search all quota orders</h2>
+        <div class="sub">Search by country, order number or product, then filter by status.</div>
+      </div>
+      <div class="controls">
+        <button class="btn liveonly" id="allRefresh">↻ Refresh all</button>
+      </div>
+    </div>
+    <div class="meta" id="allMeta"></div>
+    <div class="filters">
+      <input type="search" id="q" placeholder="e.g. Türkiye, 09.9820, Rebars, Wire Rod">
+      <select id="catFilter"><option value="all">All categories</option></select>
+      <select id="statusFilter">
+        <option value="all">All statuses</option>
+        <option value="alert">Watch or worse (≥80%)</option>
+        <option value="OK">OK</option>
+        <option value="Watch">Watch</option>
+        <option value="Critical">Critical</option>
+        <option value="Exhausted">Exhausted</option>
+      </select>
+    </div>
+    <div class="kpis" id="allKpis"></div>
+    <div class="tbl-wrap"><table id="allTable"></table></div>
+  </section>
+
+  <!-- Guide -->
+  <section id="tab-help" class="hidden">
+    <div class="sec-head"><div><div class="kicker">GUIDE</div><h2>How to read this dashboard</h2></div></div>
+    <div class="help" style="margin-top:14px">
+      <div class="card">
+        <h4>Key figures</h4>
+        <ul>
+          <li><b>Quota</b>: the order's volume for this quarter (TARIC "Amount", incl. carry-overs), in tonnes.</li>
+          <li><b>Balance</b>: what is left. <b>Used</b> = Quota − Balance.</li>
+          <li><b>Awaiting</b>: requests waiting for allocation (TARIC "indicative" figure, not final).</li>
+          <li><b>Utilisation</b> = (Used + Awaiting) ÷ Quota. It assumes all pending requests are granted, so it is a cautious figure.</li>
+          <li>TARIC usually publishes new allocations once per working day.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Status</h4>
+        <ul>
+          <li><b class="c-OK">OK</b>: below 80% — quota available.</li>
+          <li><b class="c-Watch">Watch</b>: 80–90% — plan shipments carefully.</li>
+          <li><b class="c-Critical">Critical</b>: 90–100% — may run out within days.</li>
+          <li><b class="c-Exhausted">Exhausted</b>: 100% or no balance — imports pay the 25% safeguard duty unless another quota applies. New volume opens next quarter.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Türkiye and backup quotas</h4>
+        <ul>
+          <li><b style="color:var(--tr)">Wine-coloured rows</b> (cream background) = the Türkiye-specific quota, or another quota Türkiye can use.</li>
+          <li>Where Türkiye has its own quota, the backup is <b>FTA Quota – CSQ</b> (residual pool after country quotas are used up).</li>
+          <li>Where Türkiye has no own quota, the backup is <b>FTA Quota – Other countries</b>.</li>
+          <li>Which residual quota actually applies depends on the regulation and origin rules — always confirm on the TARIC page before deciding.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>By Country view</h4>
+        <ul>
+          <li>For each category, the selected country's own quota is shown.</li>
+          <li>If the country has no own quota in a category, the residual quota is shown instead (gold label): <b>FTA Quota – Other countries</b> for Türkiye and Korea, <b>Other countries</b> for all others.</li>
+          <li>Which residual quota applies depends on the country and origin rules — check the TARIC page.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Data source &amp; freshness</h4>
+        <ul>
+          <li>Values come from the public EU TARIC quota pages. Click any order number to open the official page.</li>
+          <li>The header shows <b>"Data as of"</b>. A shared file is a snapshot — it does not update by itself. Ask the Istanbul office for a newer file if it is old.</li>
+          <li>Order list and base volumes: Regulation (EU) 2026/1457, Annex I (valid 1 Jul – 31 Dec 2026). From 2027 the regime changes and this list must be updated.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  Source: EU TARIC public data · <span id="footCount"></span><br>
+  For information only — check the official TARIC page before making business decisions.
+</footer>
+
+<script>
+// EU steel safeguard quota master catalog
+// Source: Commission Implementing Regulation (EU) 2026/1457, Annex I (valid 2026-07-01 to 2026-12-31)
+// orders row: [Order No, Category, Origin, quarterly quota (t), snapshot balance (t), snapshot awaiting (t), last allocation date]
+// Snapshot values are from TARIC on 2026-10-16; server.py replaces them with live values.
+window.QUOTA_CATALOG = {
+  source: {
+    title: "Commission Implementing Regulation (EU) 2026/1457, Annex I",
+    validity: ["2026-07-01", "2026-12-31"],
+    snapshotDate: "2026-10-16",
+    snapshotTaricUpdated: "2026-10-15",
+    period: ["2026-10-01", "2026-12-31"]
+  },
+  categories: [
+    ["1A", "Hot Rolled Sheets & Strips", "열연 강판·스트립 (A)"],
+    ["1B", "Hot Rolled Sheets & Strips", "열연 강판·스트립 (B)"],
+    ["2", "Cold Rolled Sheets", "냉연 강판"],
+    ["3A", "Electrical Sheets (other than GOES)", "전기강판 (A)"],
+    ["3B", "Electrical Sheets (other than GOES)", "전기강판 (B)"],
+    ["4A", "Metallic Coated Sheets", "도금 강판 (A)"],
+    ["4B", "Metallic Coated Sheets", "도금 강판 (B)"],
+    ["5", "Organic Coated Sheets", "컬러(유기피복) 강판"],
+    ["6", "Tin Mill Products", "석도 강판"],
+    ["7", "Quarto Plates", "후판"],
+    ["8", "Stainless Hot Rolled Sheets & Strips", "STS 열연 강판·스트립"],
+    ["9", "Stainless Cold Rolled Sheets & Strips", "STS 냉연 강판·스트립"],
+    ["10", "Stainless Hot Rolled Quarto Plates", "STS 열연 후판"],
+    ["12", "Merchant Bars & Light Sections", "일반 봉강·경량 형강"],
+    ["13", "Rebars", "철근"],
+    ["14", "Stainless Bars & Light Sections", "STS 봉강·경량 형강"],
+    ["15", "Stainless Wire Rod", "STS 선재"],
+    ["16", "Wire Rod", "선재"],
+    ["17", "Angles, Shapes & Sections", "형강"],
+    ["18", "Sheet Piling", "시트파일"],
+    ["19", "Railway Material", "철도용 자재"],
+    ["20", "Gas Pipes", "가스관"],
+    ["21", "Hollow Sections", "각관(중공 형강)"],
+    ["22", "Seamless Stainless Tubes & Pipes", "STS 무계목 강관"],
+    ["24", "Other Seamless Tubes", "기타 무계목 강관"],
+    ["25A", "Large Welded Tubes", "대구경 용접관 (A)"],
+    ["25B", "Large Welded Tubes", "대구경 용접관 (B)"],
+    ["26", "Other Welded Pipes", "기타 용접관"],
+    ["27", "Cold Finished Bars", "냉간 마무리 봉강"],
+    ["28", "Non Alloy Wire", "비합금 선"]
+  ],
+  orders: [
+    ["09.9801","1A","Türkiye",160573.74,0,0,"2026-10-12"],
+    ["09.9802","1A","Japan",137884.78,137884.78,0.324,""],
+    ["09.9803","1A","India",149318.61,0,0,"2026-10-08"],
+    ["09.9804","1A","Taiwan",69730.64,60072.801,0,"2026-10-15"],
+    ["09.9805","1A","Ukraine",120882.35,118368.189,4.025,"2026-10-15"],
+    ["09.9806","1A","Korea",115457.52,75221.288,0,"2026-10-15"],
+    ["09.9807","1A","Viet Nam",103743.08,13716.799,0.36,"2026-10-15"],
+    ["09.9808","1A","Egypt",101232.21,76358.968,0,"2026-10-15"],
+    ["09.9809","1A","Serbia",64523.65,57307.257,274.893,"2026-10-15"],
+    ["09.9500","1A","FTA Quota – CSQ",120920.56,0,0,"2026-10-15"],
+    ["09.9701","1A","Brazil",42512.75,42382.952,6.105,"2026-10-15"],
+    ["09.9705","1A","United Kingdom",38481.14,38056.519,23.751,"2026-10-15"],
+    ["09.9702","1A","Indonesia",31834.46,14.994,0,"2026-10-15"],
+    ["09.9810","1A","Australia",11830.05,0,0,"2026-10-07"],
+    ["09.9811","1A","Saudi Arabia",9545.08,9545.08,0,""],
+    ["09.9704","1A","Switzerland",5472.5,5430.617,21.692,"2026-10-15"],
+    ["09.9812","1A","Kazakhstan",2377.67,2377.67,0,""],
+    ["09.9703","1A","North Macedonia",3531.91,2649.535,181.559,"2026-10-15"],
+    ["09.9600","1A","Other countries",5564.01,0,0,"2026-10-12"],
+    ["09.9700","1A","FTA Quota – Other countries",4271.87,0,0,"2026-10-12"],
+    ["09.9813","1B","United Kingdom",526.03,409.289,0,"2026-10-15"],
+    ["09.9814","1B","United States",127.34,0,0,"2026-10-07"],
+    ["09.9815","1B","Japan",243.93,199.956,0,"2026-10-08"],
+    ["09.9816","1B","China",35.59,35.59,0,""],
+    ["09.9501","1B","FTA Quota – CSQ",106.52,106.52,0,""],
+    ["09.9601","1B","Other countries",44.89,44.89,0,""],
+    ["09.9706","1B","FTA Quota – Other countries",60.94,60.94,0,""],
+    ["09.9817","2","Taiwan",33586.54,33584.46,0,"2026-10-12"],
+    ["09.9818","2","India",67493.58,47527.312,8351.323,"2026-10-15"],
+    ["09.9819","2","Korea",63652.67,47473.293,2.397,"2026-10-15"],
+    ["09.9820","2","Türkiye",60152.91,29360.18,285.577,"2026-10-15"],
+    ["09.9821","2","United Kingdom",19834.63,19579.465,18.384,"2026-10-15"],
+    ["09.9822","2","Japan",29457.81,29445.725,4.477,"2026-10-15"],
+    ["09.9823","2","Ukraine",26549.48,25540.705,40.665,"2026-10-15"],
+    ["09.9502","2","FTA Quota – CSQ",33670.61,33670.61,0,""],
+    ["09.9602","2","Other countries",24933.92,0,0,"2026-10-15"],
+    ["09.9707","2","FTA Quota – Other countries",21283.6,1957.644,2191.336,"2026-10-15"],
+    ["09.9709","2","Egypt",1294.54,188.616,0,"2026-10-15"],
+    ["09.9710","2","Switzerland",745.65,428.934,70.421,"2026-10-15"],
+    ["09.9708","2","Brazil",3533.82,3481.175,0,"2026-10-15"],
+    ["09.9824","3A","Japan",77.95,77.95,0,""],
+    ["09.9825","3A","United Kingdom",19.56,19.56,0,""],
+    ["09.9826","3A","China",4.98,4.98,0,""],
+    ["09.9827","3A","Türkiye",8.69,8.69,0,""],
+    ["09.9503","3A","FTA Quota – CSQ",29.05,29.05,0,""],
+    ["09.9603","3A","Other countries",7.27,7.27,0.04,""],
+    ["09.9711","3A","FTA Quota – Other countries",5.43,5.43,0,""],
+    ["09.9828","3B","China",11837.81,0,0,"2026-10-05"],
+    ["09.9829","3B","Taiwan",5166.66,4455.465,0,"2026-10-07"],
+    ["09.9830","3B","Korea",15495.38,12070.91,0,"2026-10-15"],
+    ["09.9831","3B","Viet Nam",6925.39,6925.39,0,""],
+    ["09.9504","3B","FTA Quota – CSQ",4217.06,4217.06,0,""],
+    ["09.9604","3B","Other countries",1478.75,1476.567,0,"2026-10-08"],
+    ["09.9712","3B","FTA Quota – Other countries",4094.55,4094.55,0,""],
+    ["09.9713","3B","Japan",554.14,554.14,0,""],
+    ["09.9832","4A","Viet Nam",117496.92,95780.634,821.104,"2026-10-15"],
+    ["09.9833","4A","Taiwan",33783.39,0,0,"2026-10-07"],
+    ["09.9834","4A","Türkiye",63925.33,0,0,"2026-10-07"],
+    ["09.9835","4A","India",58295.85,32086.788,4625.61,"2026-10-15"],
+    ["09.9836","4A","Korea",26119.93,17219.256,488.635,"2026-10-15"],
+    ["09.9505","4A","FTA Quota – CSQ",38881.49,3386.245,0,"2026-10-15"],
+    ["09.9605","4A","Other countries",33338.76,0,0,"2026-10-07"],
+    ["09.9714","4A","FTA Quota – Other countries",12761.32,0,0,"2026-10-15"],
+    ["09.9718","4A","United Kingdom",11600.08,8683.578,743.19,"2026-10-15"],
+    ["09.9716","4A","Japan",2874.21,0,0,"2026-10-05"],
+    ["09.9715","4A","Egypt",2943.83,0,0,"2026-10-07"],
+    ["09.9717","4A","South Africa",3150.34,30.36,0,"2026-10-05"],
+    ["09.9837","4B","Korea",110698.86,76499.776,0,"2026-10-15"],
+    ["09.9838","4B","China",45749.21,0,0,"2026-10-15"],
+    ["09.9839","4B","United Kingdom",34302.33,33219.688,67.059,"2026-10-15"],
+    ["09.9840","4B","Türkiye",26019.96,0,0,"2026-10-07"],
+    ["09.9841","4B","India",25510.91,4806.963,0,"2026-10-15"],
+    ["09.9506","4B","FTA Quota – CSQ",19514.4,17417.173,2036.64,"2026-10-15"],
+    ["09.9606","4B","Other countries",23174.68,2239.275,2314.374,"2026-10-15"],
+    ["09.9719","4B","FTA Quota – Other countries",22585.17,11690.178,98.2,"2026-10-15"],
+    ["09.9720","4B","Egypt",1878.7,1851.193,18.041,"2026-10-07"],
+    ["09.9721","4B","Switzerland",314.48,59.274,4.495,"2026-10-15"],
+    ["09.9842","5","India",54334.43,0,0,"2026-10-12"],
+    ["09.9843","5","Korea",41828.13,0,18.656,"2026-10-15"],
+    ["09.9844","5","Viet Nam",12605.9,9933.697,0,"2026-10-15"],
+    ["09.9845","5","Türkiye",11568.94,0,0,"2026-10-07"],
+    ["09.9846","5","Taiwan",5322.29,0,0,"2026-10-07"],
+    ["09.9847","5","United Kingdom",7995.14,6298.347,76.74,"2026-10-15"],
+    ["09.9507","5","FTA Quota – CSQ",12575.71,2519.567,22.65,"2026-10-15"],
+    ["09.9607","5","Other countries",6968.09,1550.386,323.588,"2026-10-15"],
+    ["09.9722","5","FTA Quota – Other countries",1937.67,1877.441,3.54,"2026-10-15"],
+    ["09.9723","5","North Macedonia",1831.54,84.095,0,"2026-10-07"],
+    ["09.9848","6","China",38352.2,30117.765,484.517,"2026-10-15"],
+    ["09.9849","6","Serbia",15211.06,14005.922,251.354,"2026-10-15"],
+    ["09.9850","6","United Kingdom",15618.02,14003.85,236.337,"2026-10-15"],
+    ["09.9851","6","Türkiye",14278.53,10663.421,0,"2026-10-15"],
+    ["09.9852","6","Korea",13880.42,13032.06,0,"2026-10-08"],
+    ["09.9853","6","India",11752.33,6773.11,436.574,"2026-10-15"],
+    ["09.9508","6","FTA Quota – CSQ",11254.86,11254.86,0,""],
+    ["09.9608","6","Other countries",6446.51,0,0,"2026-10-07"],
+    ["09.9724","6","FTA Quota – Other countries",5977.74,4528.627,0,"2026-10-15"],
+    ["09.9725","6","Japan",2917.88,2899.155,0,"2026-10-05"],
+    ["09.9726","6","Singapore",20.53,20.53,0,""],
+    ["09.9854","7","Korea",79917.56,57645.444,1277.952,"2026-10-15"],
+    ["09.9855","7","Indonesia",53152.58,33861.054,0,"2026-10-15"],
+    ["09.9856","7","India",52709.57,0,0,"2026-10-07"],
+    ["09.9857","7","Japan",23294.11,11086.013,0,"2026-10-07"],
+    ["09.9858","7","North Macedonia",20671.86,10988.628,426.31,"2026-10-15"],
+    ["09.9859","7","United Kingdom",8284.85,4594.06,488.619,"2026-10-15"],
+    ["09.9509","7","FTA Quota – CSQ",22682.31,11720.581,0,"2026-10-15"],
+    ["09.9609","7","Other countries",18829.77,0,0,"2026-10-15"],
+    ["09.9727","7","FTA Quota – Other countries",7414.97,7212.468,83.297,"2026-10-15"],
+    ["09.9728","7","Türkiye",7007.71,0,0,"2026-10-15"],
+    ["09.9491","7","United Kingdom (to Northern Ireland)",5260.44,4648.689,0,"2026-10-15"],
+    ["09.9860","8","Taiwan",4995.96,2960.115,0,"2026-10-15"],
+    ["09.9861","8","Indonesia",8960.7,8951.274,0,"2026-10-15"],
+    ["09.9862","8","India",6504.78,4859.86,85.133,"2026-10-15"],
+    ["09.9863","8","China",2378.85,2216.243,2.501,"2026-10-15"],
+    ["09.9864","8","Korea",5183.78,3589.764,0,"2026-10-15"],
+    ["09.9865","8","Türkiye",3431.79,3430.453,0,"2026-10-07"],
+    ["09.9866","8","South Africa",3021.64,2803.554,0,"2026-10-15"],
+    ["09.9510","8","FTA Quota – CSQ",2806.15,2806.15,0,""],
+    ["09.9610","8","Other countries",572.32,155.618,21.893,"2026-10-15"],
+    ["09.9729","8","FTA Quota – Other countries",427.29,427.135,0.02,"2026-10-15"],
+    ["09.9492","8","United Kingdom (to Northern Ireland)",13.35,13.35,0,""],
+    ["09.9867","9","Taiwan",13246.22,7051.679,42.565,"2026-10-15"],
+    ["09.9868","9","China",10107.74,9880.32,80.225,"2026-10-15"],
+    ["09.9869","9","Korea",25471.04,20547.371,164.613,"2026-10-15"],
+    ["09.9870","9","Türkiye",17259.54,15034.568,22.768,"2026-10-15"],
+    ["09.9871","9","South Africa",13151.64,12573.303,0.12,"2026-10-15"],
+    ["09.9872","9","Viet Nam",10963.33,10187.939,0,"2026-10-15"],
+    ["09.9873","9","India",9513.44,8312.533,419.228,"2026-10-15"],
+    ["09.9511","9","FTA Quota – CSQ",9935.34,9935.34,0,""],
+    ["09.9611","9","Other countries",8442.57,4986.979,4059.502,"2026-10-15"],
+    ["09.9730","9","FTA Quota – Other countries",5554.25,5246.045,33.474,"2026-10-15"],
+    ["09.9731","9","Switzerland",409.05,302.442,4.084,"2026-10-15"],
+    ["09.9493","9","United Kingdom (to Northern Ireland)",31.27,30.72,0,"2026-10-15"],
+    ["09.9874","10","China",928.49,888.246,0,"2026-10-15"],
+    ["09.9875","10","India",1497.03,1287.06,65.645,"2026-10-05"],
+    ["09.9876","10","Korea",515.2,515.2,0,""],
+    ["09.9877","10","South Africa",494.45,494.45,0,""],
+    ["09.9512","10","FTA Quota – CSQ",278.54,278.54,0,""],
+    ["09.9612","10","Other countries",271.38,235.978,0,"2026-10-15"],
+    ["09.9732","10","FTA Quota – Other countries",271.23,271.23,0,""],
+    ["09.9878","12","China",39484.18,566.056,43.544,"2026-10-15"],
+    ["09.9879","12","Türkiye",60495.57,42827.9,479.621,"2026-10-15"],
+    ["09.9880","12","United Kingdom",26097.89,23377.938,359.25,"2026-10-15"],
+    ["09.9881","12","Switzerland",24360.31,22009.705,730.421,"2026-10-15"],
+    ["09.9882","12","Korea",14043.12,13333.784,649.194,"2026-10-15"],
+    ["09.9883","12","North Macedonia",13617.58,11960.364,262.16,"2026-10-15"],
+    ["09.9513","12","FTA Quota – CSQ",14063.24,14063.24,0,""],
+    ["09.9613","12","Other countries",11809.9,7213.282,62.365,"2026-10-15"],
+    ["09.9733","12","FTA Quota – Other countries",10862.95,10627.309,27.479,"2026-10-15"],
+    ["09.9734","12","Brazil",3046.26,2800.825,0,"2026-10-15"],
+    ["09.9735","12","Egypt",2552.66,3.623,0,"2026-10-15"],
+    ["09.9884","13","Türkiye",59919.02,0,0,"2026-10-07"],
+    ["09.9885","13","Egypt",36091.95,19239.83,0,"2026-10-15"],
+    ["09.9886","13","Algeria",15940.36,4486.053,0,"2026-10-05"],
+    ["09.9887","13","Moldova",9929.78,9638.616,825.884,"2026-10-15"],
+    ["09.9888","13","China",5054.03,5038.391,0,"2026-10-15"],
+    ["09.9889","13","Ukraine",16927.54,14893.511,0,"2026-10-15"],
+    ["09.9514","13","FTA Quota – CSQ",39700.84,21428.913,32.78,"2026-10-15"],
+    ["09.9614","13","Other countries",15830.59,15465.014,27.626,"2026-10-15"],
+    ["09.9736","13","FTA Quota – Other countries",9574.81,9547.608,0,"2026-10-15"],
+    ["09.9494","13","United Kingdom (to Northern Ireland)",2162.48,2162.48,0,""],
+    ["09.9890","14","India",23139.2,0,0,"2026-10-15"],
+    ["09.9891","14","Switzerland",2696.52,1546.95,90.36,"2026-10-15"],
+    ["09.9892","14","United Kingdom",2029.23,1878.379,58.05,"2026-10-15"],
+    ["09.9893","14","China",896.35,378.488,27.249,"2026-10-15"],
+    ["09.9515","14","FTA Quota – CSQ",2398.59,0,2.714,"2026-10-15"],
+    ["09.9615","14","Other countries",1530.08,0,4.24,"2026-10-15"],
+    ["09.9737","14","FTA Quota – Other countries",708.72,490.71,2.246,"2026-10-15"],
+    ["09.9894","15","India",4693.08,2627.257,159.187,"2026-10-15"],
+    ["09.9895","15","Taiwan",1076.23,752.155,0,"2026-10-15"],
+    ["09.9896","15","Korea",1303.11,1198.388,0,"2026-10-15"],
+    ["09.9897","15","United Kingdom",998.52,911.318,0.052,"2026-10-15"],
+    ["09.9898","15","China",343.53,343.53,0,""],
+    ["09.9899","15","Japan",600,12.203,0,"2026-10-15"],
+    ["09.9516","15","FTA Quota – CSQ",810.14,810.14,0,""],
+    ["09.9616","15","Other countries",145.21,128.286,0,"2026-10-15"],
+    ["09.9738","15","FTA Quota – Other countries",145.69,142.622,0,"2026-10-08"],
+    ["09.9900","16","Türkiye",61147.25,0,0,"2026-10-07"],
+    ["09.9901","16","Malaysia",21670.85,21670.849,0,"2026-10-15"],
+    ["09.9902","16","United Kingdom",43849.88,36325.631,1138.905,"2026-10-15"],
+    ["09.9903","16","Ukraine",47286.26,43304.504,0,"2026-10-15"],
+    ["09.9904","16","Switzerland",40548.83,17547.168,1320.176,"2026-10-15"],
+    ["09.9905","16","Viet Nam",24271.66,24271.66,0,""],
+    ["09.9906","16","Moldova",23959.81,19284.545,970.111,"2026-10-15"],
+    ["09.9907","16","Egypt",21678.72,11986.834,0,"2026-10-05"],
+    ["09.9517","16","FTA Quota – CSQ",30720.34,21210.941,1.8,"2026-10-15"],
+    ["09.9617","16","Other countries",38481.84,36994.86,319.54,"2026-10-15"],
+    ["09.9739","16","FTA Quota – Other countries",34610.24,34444.64,98.5,"2026-10-12"],
+    ["09.9740","16","Korea",2833.69,323.707,0,"2026-10-15"],
+    ["09.9741","16","Japan",1323.5,1234.124,0,"2026-10-12"],
+    ["09.9908","17","Türkiye",13455.55,3316.872,138.079,"2026-10-15"],
+    ["09.9909","17","United Kingdom",5964.05,5362.55,8.414,"2026-10-15"],
+    ["09.9910","17","Switzerland",2590.81,2584.68,0,"2026-10-07"],
+    ["09.9911","17","United Arab Emirates",1491.1,1452.9,14.18,"2026-10-15"],
+    ["09.9518","17","FTA Quota – CSQ",3032.46,3032.46,0,""],
+    ["09.9618","17","Other countries",3153.55,3094.398,0,"2026-10-15"],
+    ["09.9742","17","FTA Quota – Other countries",1073.81,1067.56,0,"2026-10-08"],
+    ["09.9743","17","Korea",1251.71,1218.522,0,"2026-10-15"],
+    ["09.9495","17","United Kingdom (to Northern Ireland)",14138.78,13989.05,0,"2026-10-15"],
+    ["09.9912","18","China",2480.61,0,0,"2026-10-05"],
+    ["09.9913","18","United Arab Emirates",903.08,715.28,0,"2026-10-05"],
+    ["09.9914","18","United Kingdom",1666.94,1666.94,0,""],
+    ["09.9519","18","FTA Quota – CSQ",1234.34,1234.34,0,""],
+    ["09.9619","18","Other countries",85.28,85.28,0,""],
+    ["09.9744","18","FTA Quota – Other countries",1445.52,1372.255,3.162,"2026-10-15"],
+    ["09.9915","19","United Kingdom",1758.07,813.335,0,"2026-10-15"],
+    ["09.9916","19","Türkiye",1280.1,869.948,23.74,"2026-10-15"],
+    ["09.9917","19","China",421.09,0,0,"2026-10-07"],
+    ["09.9520","19","FTA Quota – CSQ",286,286,0,""],
+    ["09.9620","19","Other countries",220.46,150.944,0,"2026-10-15"],
+    ["09.9745","19","FTA Quota – Other countries",152.35,135.712,0.398,"2026-10-15"],
+    ["09.9918","20","Türkiye",28163.03,0,0,"2026-10-15"],
+    ["09.9919","20","India",10036.89,0,0,"2026-10-15"],
+    ["09.9920","20","United Arab Emirates",2521.72,2475.08,0,"2026-10-05"],
+    ["09.9921","20","North Macedonia",3636.32,355.812,63.29,"2026-10-15"],
+    ["09.9922","20","United Kingdom",3264.36,2811.167,71.052,"2026-10-15"],
+    ["09.9521","20","FTA Quota – CSQ",3910.55,0,0.44,"2026-10-15"],
+    ["09.9621","20","Other countries",2339.12,162.738,126.591,"2026-10-15"],
+    ["09.9746","20","FTA Quota – Other countries",1731.37,1071.892,66.855,"2026-10-15"],
+    ["09.9923","21","Türkiye",59849.63,0,0,"2026-10-07"],
+    ["09.9924","21","United Kingdom",22227.12,18665.05,456.748,"2026-10-15"],
+    ["09.9925","21","North Macedonia",10958.74,0,0,"2026-10-12"],
+    ["09.9926","21","China",3680.24,0,0,"2026-10-15"],
+    ["09.9927","21","Ukraine",6640.34,294.896,0,"2026-10-15"],
+    ["09.9522","21","FTA Quota – CSQ",8487.11,0,5.733,"2026-10-15"],
+    ["09.9622","21","Other countries",7174.14,0,0,"2026-10-07"],
+    ["09.9747","21","FTA Quota – Other countries",5149.92,0,0,"2026-10-15"],
+    ["09.9748","21","Switzerland",705.94,593.73,4.411,"2026-10-15"],
+    ["09.9928","22","India",3832.13,0,0,"2026-10-07"],
+    ["09.9929","22","Ukraine",1631.12,1150.053,39.663,"2026-10-15"],
+    ["09.9930","22","China",268.27,97.507,0.444,"2026-10-15"],
+    ["09.9931","22","Korea",598.03,551.479,0,"2026-10-15"],
+    ["09.9523","22","FTA Quota – CSQ",512.63,0,6.665,"2026-10-15"],
+    ["09.9623","22","Other countries",774.33,0,0,"2026-10-07"],
+    ["09.9749","22","FTA Quota – Other countries",446.75,27.113,24.401,"2026-10-15"],
+    ["09.9750","22","Japan",178.57,102.908,0.038,"2026-10-15"],
+    ["09.9932","24","China",13158.84,0,0,"2026-10-08"],
+    ["09.9933","24","Ukraine",20167.62,15672.842,438.483,"2026-10-15"],
+    ["09.9934","24","Brazil",7756.96,6696.483,0,"2026-10-15"],
+    ["09.9524","24","FTA Quota – CSQ",3052.2,3052.2,0,""],
+    ["09.9624","24","Other countries",9824.98,7585.978,78.317,"2026-10-15"],
+    ["09.9751","24","FTA Quota – Other countries",11895.7,11606.145,211.024,"2026-10-15"],
+    ["09.9752","24","Argentina",1258.1,1236.26,0,"2026-10-15"],
+    ["09.9753","24","Singapore",110.77,110.77,1.174,""],
+    ["09.9935","25A","Türkiye",1947.08,1947.08,0,""],
+    ["09.9936","25A","Israel",834.24,834.24,0,""],
+    ["09.9937","25A","China",662.75,0,0,"2026-10-05"],
+    ["09.9938","25A","India",1091.2,0,0,"2026-10-05"],
+    ["09.9525","25A","FTA Quota – CSQ",1387.41,1289.3,0,"2026-10-15"],
+    ["09.9625","25A","Other countries",666.56,610.159,11.113,"2026-10-15"],
+    ["09.9754","25A","FTA Quota – Other countries",584.19,549.227,13.553,"2026-10-15"],
+    ["09.9496","25A","United Kingdom (to Northern Ireland)",13.93,13.93,0,""],
+    ["09.9939","25B","Türkiye",10935.66,10479.015,171.5,"2026-10-15"],
+    ["09.9940","25B","China",2480.89,0,0,"2026-10-07"],
+    ["09.9941","25B","United Kingdom",2013.16,1911.918,0,"2026-10-15"],
+    ["09.9942","25B","Algeria",584.75,2.056,0,"2026-10-05"],
+    ["09.9526","25B","FTA Quota – CSQ",2029.75,2029.75,0,""],
+    ["09.9626","25B","Other countries",1402.23,0,0,"2026-10-07"],
+    ["09.9755","25B","FTA Quota – Other countries",1436.41,829.791,204.48,"2026-10-15"],
+    ["09.9756","25B","Singapore",21.07,21.07,0,""],
+    ["09.9943","26","Türkiye",22453.26,0,0,"2026-10-08"],
+    ["09.9944","26","Switzerland",11860.66,11424.804,113.155,"2026-10-15"],
+    ["09.9945","26","China",3220.17,0,0,"2026-10-07"],
+    ["09.9946","26","India",6158.62,0,0.39,"2026-10-15"],
+    ["09.9947","26","United Kingdom",4688.38,2418.457,204.58,"2026-10-15"],
+    ["09.9948","26","Taiwan",1597.91,0,0,"2026-10-07"],
+    ["09.9527","26","FTA Quota – CSQ",4057.59,1010.064,45.023,"2026-10-15"],
+    ["09.9627","26","Other countries",4358.64,2411.69,175.013,"2026-10-15"],
+    ["09.9757","26","FTA Quota – Other countries",4282.85,2797.66,189.509,"2026-10-15"],
+    ["09.9758","26","Singapore",11.18,11.158,0,"2026-10-12"],
+    ["09.9949","27","China",3960.92,1071.219,50.37,"2026-10-15"],
+    ["09.9950","27","Türkiye",7045.08,4796.179,149.781,"2026-10-15"],
+    ["09.9951","27","Switzerland",6054.7,4917.876,134.775,"2026-10-15"],
+    ["09.9952","27","Ukraine",1715.77,1541.948,0.09,"2026-10-15"],
+    ["09.9528","27","FTA Quota – CSQ",1491.29,1491.29,0,""],
+    ["09.9628","27","Other countries",1838.58,1156.07,47.626,"2026-10-15"],
+    ["09.9759","27","FTA Quota – Other countries",2222.43,2024.824,3.589,"2026-10-15"],
+    ["09.9953","28","China",14298.15,0,0,"2026-10-15"],
+    ["09.9954","28","Türkiye",24235.3,3229.814,2191.473,"2026-10-15"],
+    ["09.9955","28","Ukraine",20689.52,19496.631,133.957,"2026-10-15"],
+    ["09.9529","28","FTA Quota – CSQ",4496.4,4496.4,0,""],
+    ["09.9629","28","Other countries",7072.28,931.729,265.839,"2026-10-15"],
+    ["09.9760","28","FTA Quota – Other countries",8489.22,6385.115,210.201,"2026-10-15"],
+    ["09.9497","28","United Kingdom (to Northern Ireland)",190.57,190.57,0,""]
+  ]
+};
+
+</script>
+<script id="snapshot" type="application/json">{"start": "2026-10-01", "items": {"09.9806": {"orderNo": "09.9806", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099806&Lang=en&StartDate=2026-10-01", "error": null, "quota": 115457.52, "balance": 75221.288, "awaiting": 5.924, "initialQuota": 115457.52, "originLive": "European Union Korea, Republic of (South Korea)", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-13", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:31+03:00"}, "09.9706": {"orderNo": "09.9706", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099706&Lang=en&StartDate=2026-10-01", "error": null, "quota": 104.346, "balance": 100.239, "awaiting": 0.0, "initialQuota": 60.94, "originLive": "FTA partners", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-23", "lastImportDate": "2026-10-21", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:27+03:00"}, "09.9819": {"orderNo": "09.9819", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099819&Lang=en&StartDate=2026-10-01", "error": null, "quota": 63652.67, "balance": 47472.949324, "awaiting": 2.053, "initialQuota": 63652.67, "originLive": "European Union Korea, Republic of (South Korea)", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-16", "lastImportDate": "2026-10-14", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:39+03:00"}, "09.9711": {"orderNo": "09.9711", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099711&Lang=en&StartDate=2026-10-01", "error": null, "quota": 5.43, "balance": 5.43, "awaiting": 0.0, "initialQuota": 5.43, "originLive": "FTA partners", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": null, "lastImportDate": null, "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:30:03+03:00"}, "09.9830": {"orderNo": "09.9830", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099830&Lang=en&StartDate=2026-10-01", "error": null, "quota": 15495.38, "balance": 12070.91, "awaiting": 0.0, "initialQuota": 15495.38, "originLive": "European Union Korea, Republic of (South Korea)", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-12", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:30:03+03:00"}, "09.9836": {"orderNo": "09.9836", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099836&Lang=en&StartDate=2026-10-01", "error": null, "quota": 26119.93, "balance": 17219.256, "awaiting": 488.635, "initialQuota": 26119.93, "originLive": "European Union Korea, Republic of (South Korea)", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-13", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:30:03+03:00"}, "09.9837": {"orderNo": "09.9837", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099837&Lang=en&StartDate=2026-10-01", "error": null, "quota": 110698.86, "balance": 76499.77565000001, "awaiting": 0.0, "initialQuota": 110698.86, "originLive": "European Union Korea, Republic of (South Korea)", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-13", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:30:04+03:00"}, "09.9843": {"orderNo": "09.9843", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099843&Lang=en&StartDate=2026-10-01", "error": null, "quota": 41828.13, "balance": 0.0, "awaiting": 18.656, "initialQuota": 41828.13, "originLive": "European Union Korea, Republic of (South Korea)", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-10", "exhaustionDate": "2026-10-10", "critical": "Yes", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:30:04+03:00"}, "09.9852": {"orderNo": "09.9852", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099852&Lang=en&StartDate=2026-10-01", "error": null, "quota": 13880.42, "balance": 13032.06, "awaiting": 0.0, "initialQuota": 13880.42, "originLive": "European Union Korea, Republic of (South Korea)", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-08", "lastImportDate": "2026-10-06", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:30:04+03:00"}, "09.9854": {"orderNo": "09.9854", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099854&Lang=en&StartDate=2026-10-01", "error": null, "quota": 79917.56, "balance": 56367.492, "awaiting": 0.0, "initialQuota": 79917.56, "originLive": "European Union Korea, Republic of (South Korea)", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-16", "lastImportDate": "2026-10-14", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:18+03:00"}, "09.9864": {"orderNo": "09.9864", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099864&Lang=en&StartDate=2026-10-01", "error": null, "quota": 5183.78, "balance": 3589.764, "awaiting": 0.0, "initialQuota": 5183.78, "originLive": "European Union Korea, Republic of (South Korea)", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-12", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:44+03:00"}, "09.9869": {"orderNo": "09.9869", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099869&Lang=en&StartDate=2026-10-01", "error": null, "quota": 26335.518587000002, "balance": 19544.632087, "awaiting": 38.116, "initialQuota": 25471.04, "originLive": "European Union Korea, Republic of (South Korea)", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-28", "lastImportDate": "2026-10-26", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:37+03:00"}, "09.9876": {"orderNo": "09.9876", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099876&Lang=en&StartDate=2026-10-01", "error": null, "quota": 515.2, "balance": 515.2, "awaiting": 0.0, "initialQuota": 515.2, "originLive": "European Union Korea, Republic of (South Korea)", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": null, "lastImportDate": null, "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:30:04+03:00"}, "09.9882": {"orderNo": "09.9882", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099882&Lang=en&StartDate=2026-10-01", "error": null, "quota": 14043.12, "balance": 13333.78385, "awaiting": 649.194, "initialQuota": 14043.12, "originLive": "European Union Korea, Republic of (South Korea)", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-13", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:30:04+03:00"}, "09.9736": {"orderNo": "09.9736", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099736&Lang=en&StartDate=2026-10-01", "error": null, "quota": 9574.81, "balance": 9547.608, "awaiting": 0.0, "initialQuota": 9574.81, "originLive": "FTA partners", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-13", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:30:04+03:00"}, "09.9737": {"orderNo": "09.9737", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099737&Lang=en&StartDate=2026-10-01", "error": null, "quota": 708.72, "balance": 302.111031, "awaiting": 26.888, "initialQuota": 708.72, "originLive": "FTA partners", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-28", "lastImportDate": "2026-10-26", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:28+03:00"}, "09.9896": {"orderNo": "09.9896", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099896&Lang=en&StartDate=2026-10-01", "error": null, "quota": 1303.11, "balance": 1198.3883, "awaiting": 0.0, "initialQuota": 1303.11, "originLive": "European Union Korea, Republic of (South Korea)", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-13", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:30:04+03:00"}, "09.9740": {"orderNo": "09.9740", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099740&Lang=en&StartDate=2026-10-01", "error": null, "quota": 2833.69, "balance": 323.707, "awaiting": 0.0, "initialQuota": 2833.69, "originLive": "European Union Korea, Republic of (South Korea)", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-13", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:30:04+03:00"}, "09.9743": {"orderNo": "09.9743", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099743&Lang=en&StartDate=2026-10-01", "error": null, "quota": 1251.71, "balance": 1218.521536, "awaiting": 0.0, "initialQuota": 1251.71, "originLive": "European Union Korea, Republic of (South Korea)", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-12", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:30:05+03:00"}, "09.9744": {"orderNo": "09.9744", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099744&Lang=en&StartDate=2026-10-01", "error": null, "quota": 2665.0748, "balance": 2552.7158, "awaiting": 29.323, "initialQuota": 1445.52, "originLive": "FTA partners", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-28", "lastImportDate": "2026-10-26", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:29+03:00"}, "09.9745": {"orderNo": "09.9745", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099745&Lang=en&StartDate=2026-10-01", "error": null, "quota": 152.35, "balance": 135.712, "awaiting": 0.398, "initialQuota": 152.35, "originLive": "FTA partners", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-13", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:30:05+03:00"}, "09.9746": {"orderNo": "09.9746", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099746&Lang=en&StartDate=2026-10-01", "error": null, "quota": 1731.37, "balance": 1071.89155, "awaiting": 66.855, "initialQuota": 1731.37, "originLive": "FTA partners", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-13", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:30:05+03:00"}, "09.9747": {"orderNo": "09.9747", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099747&Lang=en&StartDate=2026-10-01", "error": null, "quota": 5149.92, "balance": 0.0, "awaiting": 0.0, "initialQuota": 5149.92, "originLive": "FTA partners", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-01", "exhaustionDate": "2026-10-01", "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:30:05+03:00"}, "09.9931": {"orderNo": "09.9931", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099931&Lang=en&StartDate=2026-10-01", "error": null, "quota": 598.03, "balance": 551.47912, "awaiting": 0.0, "initialQuota": 598.03, "originLive": "European Union Korea, Republic of (South Korea)", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-13", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:30:05+03:00"}, "09.9751": {"orderNo": "09.9751", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099751&Lang=en&StartDate=2026-10-01", "error": null, "quota": 17916.429272999998, "balance": 16612.271603, "awaiting": 422.784, "initialQuota": 11895.7, "originLive": "FTA partners", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-28", "lastImportDate": "2026-10-26", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:29+03:00"}, "09.9754": {"orderNo": "09.9754", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099754&Lang=en&StartDate=2026-10-01", "error": null, "quota": 584.19, "balance": 549.22654, "awaiting": 13.553, "initialQuota": 584.19, "originLive": "FTA partners", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-13", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:30:05+03:00"}, "09.9755": {"orderNo": "09.9755", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099755&Lang=en&StartDate=2026-10-01", "error": null, "quota": 1436.41, "balance": 829.790794, "awaiting": 204.48, "initialQuota": 1436.41, "originLive": "FTA partners", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-13", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:30:05+03:00"}, "09.9757": {"orderNo": "09.9757", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099757&Lang=en&StartDate=2026-10-01", "error": null, "quota": 4282.85, "balance": 2797.660026, "awaiting": 189.509, "initialQuota": 4282.85, "originLive": "FTA partners", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-13", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:30:05+03:00"}, "09.9759": {"orderNo": "09.9759", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099759&Lang=en&StartDate=2026-10-01", "error": null, "quota": 2222.43, "balance": 2024.8238600000002, "awaiting": 3.589, "initialQuota": 2222.43, "originLive": "FTA partners", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-13", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:30:05+03:00"}, "09.9760": {"orderNo": "09.9760", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099760&Lang=en&StartDate=2026-10-01", "error": null, "quota": 8489.22, "balance": 6385.114527, "awaiting": 210.201, "initialQuota": 8489.22, "originLive": "FTA partners", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-13", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:30:05+03:00"}, "09.9801": {"orderNo": "09.9801", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099801&Lang=en&StartDate=2026-10-01", "error": null, "quota": 160573.74, "balance": 0.0, "awaiting": 0.0, "initialQuota": 160573.74, "originLive": "European Union Türkiye", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-26", "lastImportDate": "2026-10-01", "exhaustionDate": "2026-10-01", "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:27+03:00"}, "09.9802": {"orderNo": "09.9802", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099802&Lang=en&StartDate=2026-10-01", "error": null, "quota": 137884.78, "balance": 137884.456, "awaiting": 0.0, "initialQuota": 137884.78, "originLive": "European Union Japan", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-16", "lastImportDate": "2026-10-14", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:31+03:00"}, "09.9803": {"orderNo": "09.9803", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099803&Lang=en&StartDate=2026-10-01", "error": null, "quota": 149318.61, "balance": 0.0, "awaiting": 0.0, "initialQuota": 149318.61, "originLive": "European Union India", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-08", "lastImportDate": "2026-10-06", "exhaustionDate": "2026-10-06", "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:31+03:00"}, "09.9804": {"orderNo": "09.9804", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099804&Lang=en&StartDate=2026-10-01", "error": null, "quota": 69730.64, "balance": 60072.801, "awaiting": 0.0, "initialQuota": 69730.64, "originLive": "European Union Taiwan", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-09", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:31+03:00"}, "09.9805": {"orderNo": "09.9805", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099805&Lang=en&StartDate=2026-10-01", "error": null, "quota": 120882.35, "balance": 118368.189, "awaiting": 964.855, "initialQuota": 120882.35, "originLive": "European Union Ukraine", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-13", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:31+03:00"}, "09.9807": {"orderNo": "09.9807", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099807&Lang=en&StartDate=2026-10-01", "error": null, "quota": 103743.08, "balance": 13716.438984999999, "awaiting": 56.146, "initialQuota": 103743.08, "originLive": "European Union Viet Nam", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-16", "lastImportDate": "2026-10-14", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:31+03:00"}, "09.9808": {"orderNo": "09.9808", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099808&Lang=en&StartDate=2026-10-01", "error": null, "quota": 101232.21, "balance": 76358.968, "awaiting": 0.0, "initialQuota": 101232.21, "originLive": "Egypt European Union", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-13", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:31+03:00"}, "09.9809": {"orderNo": "09.9809", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099809&Lang=en&StartDate=2026-10-01", "error": null, "quota": 64523.65, "balance": 57051.724354000005, "awaiting": 1162.28, "initialQuota": 64523.65, "originLive": "European Union Serbia", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-16", "lastImportDate": "2026-10-14", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:31+03:00"}, "09.9500": {"orderNo": "09.9500", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099500&Lang=en&StartDate=2026-10-01", "error": null, "quota": 120920.56, "balance": 0.0, "awaiting": 0.0, "initialQuota": 120920.56, "originLive": "Egypt European Union India Korea, Republic of (South Korea) Türkiye Ukraine", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-28", "lastImportDate": "2026-10-01", "exhaustionDate": "2026-10-01", "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:27+03:00"}, "09.9701": {"orderNo": "09.9701", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099701&Lang=en&StartDate=2026-10-01", "error": null, "quota": 42512.75, "balance": 42376.847, "awaiting": 34.215, "initialQuota": 42512.75, "originLive": "Brazil European Union", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-16", "lastImportDate": "2026-10-14", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:31+03:00"}, "09.9705": {"orderNo": "09.9705", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099705&Lang=en&StartDate=2026-10-01", "error": null, "quota": 38481.14, "balance": 38032.767707, "awaiting": 3.439, "initialQuota": 38481.14, "originLive": "European Union United Kingdom", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-16", "lastImportDate": "2026-10-14", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:31+03:00"}, "09.9702": {"orderNo": "09.9702", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099702&Lang=en&StartDate=2026-10-01", "error": null, "quota": 31834.46, "balance": 14.994361000000001, "awaiting": 0.0, "initialQuota": 31834.46, "originLive": "European Union Indonesia", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-09", "exhaustionDate": null, "critical": "Yes", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:32+03:00"}, "09.9810": {"orderNo": "09.9810", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099810&Lang=en&StartDate=2026-10-01", "error": null, "quota": 11830.05, "balance": 0.0, "awaiting": 0.0, "initialQuota": 11830.05, "originLive": "Australia European Union", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-07", "lastImportDate": "2026-10-01", "exhaustionDate": "2026-10-01", "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:32+03:00"}, "09.9811": {"orderNo": "09.9811", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099811&Lang=en&StartDate=2026-10-01", "error": null, "quota": 9545.08, "balance": 9545.08, "awaiting": 0.0, "initialQuota": 9545.08, "originLive": "European Union Saudi Arabia", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": null, "lastImportDate": null, "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:32+03:00"}, "09.9704": {"orderNo": "09.9704", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099704&Lang=en&StartDate=2026-10-01", "error": null, "quota": 5472.5, "balance": 5409.543320000001, "awaiting": 0.757, "initialQuota": 5472.5, "originLive": "European Union Switzerland", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-16", "lastImportDate": "2026-10-14", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:32+03:00"}, "09.9812": {"orderNo": "09.9812", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099812&Lang=en&StartDate=2026-10-01", "error": null, "quota": 2377.67, "balance": 2377.67, "awaiting": 0.0, "initialQuota": 2377.67, "originLive": "European Union Kazakhstan", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": null, "lastImportDate": null, "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:32+03:00"}, "09.9703": {"orderNo": "09.9703", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099703&Lang=en&StartDate=2026-10-01", "error": null, "quota": 3531.91, "balance": 2606.126, "awaiting": 188.041, "initialQuota": 3531.91, "originLive": "European Union North Macedonia", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-16", "lastImportDate": "2026-10-14", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:32+03:00"}, "09.9600": {"orderNo": "09.9600", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099600&Lang=en&StartDate=2026-10-01", "error": null, "quota": 5564.01, "balance": 0.0, "awaiting": 0.0, "initialQuota": 5564.01, "originLive": "ERGA OMNES", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-12", "lastImportDate": "2026-10-01", "exhaustionDate": "2026-10-01", "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:32+03:00"}, "09.9700": {"orderNo": "09.9700", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099700&Lang=en&StartDate=2026-10-01", "error": null, "quota": 4271.87, "balance": 0.0, "awaiting": 0.0, "initialQuota": 4271.87, "originLive": "FTA partners", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-12", "lastImportDate": "2026-10-01", "exhaustionDate": "2026-10-01", "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:32+03:00"}, "09.9601": {"orderNo": "09.9601", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099601&Lang=en&StartDate=2026-10-01", "error": null, "quota": 44.89, "balance": 44.89, "awaiting": 0.0, "initialQuota": 44.89, "originLive": "ERGA OMNES", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": null, "lastImportDate": null, "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:34+03:00"}, "09.9820": {"orderNo": "09.9820", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099820&Lang=en&StartDate=2026-10-01", "error": null, "quota": 62177.630676, "balance": 29866.596936, "awaiting": 1132.636, "initialQuota": 60152.91, "originLive": "European Union Türkiye", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-28", "lastImportDate": "2026-10-26", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:27+03:00"}, "09.9827": {"orderNo": "09.9827", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099827&Lang=en&StartDate=2026-10-01", "error": null, "quota": 17.38, "balance": 17.38, "awaiting": 0.0, "initialQuota": 8.69, "originLive": "European Union Türkiye", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": null, "lastImportDate": null, "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:27+03:00"}, "09.9604": {"orderNo": "09.9604", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099604&Lang=en&StartDate=2026-10-01", "error": null, "quota": 1478.75, "balance": 1476.567, "awaiting": 0.0, "initialQuota": 1478.75, "originLive": "ERGA OMNES", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-08", "lastImportDate": "2026-10-06", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:31:36+03:00"}, "09.9834": {"orderNo": "09.9834", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099834&Lang=en&StartDate=2026-10-01", "error": null, "quota": 63925.33, "balance": 0.0, "awaiting": 0.0, "initialQuota": 63925.33, "originLive": "European Union Türkiye", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-07", "lastImportDate": "2026-10-01", "exhaustionDate": "2026-10-01", "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:27+03:00"}, "09.9840": {"orderNo": "09.9840", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099840&Lang=en&StartDate=2026-10-01", "error": null, "quota": 26667.696405000002, "balance": 647.736411, "awaiting": 0.0, "initialQuota": 26019.96, "originLive": "European Union Türkiye", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-07", "lastImportDate": "2026-10-01", "exhaustionDate": null, "critical": "Yes", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:27+03:00"}, "09.9845": {"orderNo": "09.9845", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099845&Lang=en&StartDate=2026-10-01", "error": null, "quota": 11568.94, "balance": 0.0, "awaiting": 0.0, "initialQuota": 11568.94, "originLive": "European Union Türkiye", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-07", "lastImportDate": "2026-10-01", "exhaustionDate": "2026-10-01", "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:28+03:00"}, "09.9851": {"orderNo": "09.9851", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099851&Lang=en&StartDate=2026-10-01", "error": null, "quota": 14278.53, "balance": 6663.0362000000005, "awaiting": 0.0, "initialQuota": 14278.53, "originLive": "European Union Türkiye", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-23", "lastImportDate": "2026-10-21", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:28+03:00"}, "09.9728": {"orderNo": "09.9728", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099728&Lang=en&StartDate=2026-10-01", "error": null, "quota": 7007.71, "balance": 0.0, "awaiting": 0.0, "initialQuota": 7007.71, "originLive": "European Union Türkiye", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-21", "lastImportDate": "2026-10-01", "exhaustionDate": "2026-10-01", "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:28+03:00"}, "09.9865": {"orderNo": "09.9865", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099865&Lang=en&StartDate=2026-10-01", "error": null, "quota": 6846.478349999999, "balance": 6844.76635, "awaiting": 0.0, "initialQuota": 3431.79, "originLive": "European Union Türkiye", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-28", "lastImportDate": "2026-10-26", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:28+03:00"}, "09.9870": {"orderNo": "09.9870", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099870&Lang=en&StartDate=2026-10-01", "error": null, "quota": 19124.50976, "balance": 16066.16103, "awaiting": 1395.222, "initialQuota": 17259.54, "originLive": "European Union Türkiye", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-28", "lastImportDate": "2026-10-26", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:28+03:00"}, "09.9612": {"orderNo": "09.9612", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099612&Lang=en&StartDate=2026-10-01", "error": null, "quota": 271.38, "balance": 235.978, "awaiting": 0.0, "initialQuota": 271.38, "originLive": "ERGA OMNES", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-13", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:31:37+03:00"}, "09.9879": {"orderNo": "09.9879", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099879&Lang=en&StartDate=2026-10-01", "error": null, "quota": 64654.674145000005, "balance": 41135.471593, "awaiting": 1427.154, "initialQuota": 60495.57, "originLive": "European Union Türkiye", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-28", "lastImportDate": "2026-10-26", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:28+03:00"}, "09.9884": {"orderNo": "09.9884", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099884&Lang=en&StartDate=2026-10-01", "error": null, "quota": 59919.02, "balance": 0.0, "awaiting": 0.0, "initialQuota": 59919.02, "originLive": "European Union Türkiye", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-07", "lastImportDate": "2026-10-01", "exhaustionDate": "2026-10-01", "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:28+03:00"}, "09.9615": {"orderNo": "09.9615", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099615&Lang=en&StartDate=2026-10-01", "error": null, "quota": 1530.08, "balance": 0.0, "awaiting": 4.24, "initialQuota": 1530.08, "originLive": "ERGA OMNES", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-13", "exhaustionDate": "2026-10-13", "critical": "Yes", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:31:37+03:00"}, "09.9616": {"orderNo": "09.9616", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099616&Lang=en&StartDate=2026-10-01", "error": null, "quota": 145.21, "balance": 128.286, "awaiting": 0.0, "initialQuota": 145.21, "originLive": "ERGA OMNES", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-12", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:31:37+03:00"}, "09.9900": {"orderNo": "09.9900", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099900&Lang=en&StartDate=2026-10-01", "error": null, "quota": 61148.512114, "balance": 1.262114, "awaiting": 0.0, "initialQuota": 61147.25, "originLive": "European Union Türkiye", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-07", "lastImportDate": "2026-10-01", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:28+03:00"}, "09.9908": {"orderNo": "09.9908", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099908&Lang=en&StartDate=2026-10-01", "error": null, "quota": 13455.55, "balance": 3043.629506, "awaiting": 418.942, "initialQuota": 13455.55, "originLive": "European Union Türkiye", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-26", "lastImportDate": "2026-10-22", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:29+03:00"}, "09.9619": {"orderNo": "09.9619", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099619&Lang=en&StartDate=2026-10-01", "error": null, "quota": 85.28, "balance": 85.28, "awaiting": 0.0, "initialQuota": 85.28, "originLive": "ERGA OMNES", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": null, "lastImportDate": null, "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:31:38+03:00"}, "09.9916": {"orderNo": "09.9916", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099916&Lang=en&StartDate=2026-10-01", "error": null, "quota": 1280.1, "balance": 413.158, "awaiting": 22.04, "initialQuota": 1280.1, "originLive": "European Union Türkiye", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-26", "lastImportDate": "2026-10-22", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:29+03:00"}, "09.9918": {"orderNo": "09.9918", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099918&Lang=en&StartDate=2026-10-01", "error": null, "quota": 28163.03, "balance": 0.0, "awaiting": 0.0, "initialQuota": 28163.03, "originLive": "European Union Türkiye", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-23", "lastImportDate": "2026-10-01", "exhaustionDate": "2026-10-01", "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:29+03:00"}, "09.9923": {"orderNo": "09.9923", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099923&Lang=en&StartDate=2026-10-01", "error": null, "quota": 59849.63, "balance": 0.0, "awaiting": 0.0, "initialQuota": 59849.63, "originLive": "European Union Türkiye", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-20", "lastImportDate": "2026-10-01", "exhaustionDate": "2026-10-01", "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:29+03:00"}, "09.9623": {"orderNo": "09.9623", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099623&Lang=en&StartDate=2026-10-01", "error": null, "quota": 774.33, "balance": 0.0, "awaiting": 0.0, "initialQuota": 774.33, "originLive": "ERGA OMNES", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-07", "lastImportDate": "2026-10-01", "exhaustionDate": "2026-10-01", "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:31:38+03:00"}, "09.9624": {"orderNo": "09.9624", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099624&Lang=en&StartDate=2026-10-01", "error": null, "quota": 9824.98, "balance": 7585.9775549999995, "awaiting": 78.317, "initialQuota": 9824.98, "originLive": "ERGA OMNES", "taricUpdated": "2026-10-15", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-13", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-16T15:31:38+03:00"}, "09.9935": {"orderNo": "09.9935", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099935&Lang=en&StartDate=2026-10-01", "error": null, "quota": 3894.16, "balance": 3894.16, "awaiting": 0.0, "initialQuota": 1947.08, "originLive": "European Union Türkiye", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": null, "lastImportDate": null, "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:29+03:00"}, "09.9939": {"orderNo": "09.9939", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099939&Lang=en&StartDate=2026-10-01", "error": null, "quota": 13561.82, "balance": 12778.235, "awaiting": 0.0, "initialQuota": 10935.66, "originLive": "European Union Türkiye", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-23", "lastImportDate": "2026-10-21", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:29+03:00"}, "09.9943": {"orderNo": "09.9943", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099943&Lang=en&StartDate=2026-10-01", "error": null, "quota": 22453.26, "balance": 0.0, "awaiting": 0.0, "initialQuota": 22453.26, "originLive": "European Union Türkiye", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-19", "lastImportDate": "2026-10-01", "exhaustionDate": "2026-10-01", "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:29+03:00"}, "09.9950": {"orderNo": "09.9950", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099950&Lang=en&StartDate=2026-10-01", "error": null, "quota": 7061.830772, "balance": 3328.513257, "awaiting": 274.53, "initialQuota": 7045.08, "originLive": "European Union Türkiye", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-28", "lastImportDate": "2026-10-26", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:30+03:00"}, "09.9954": {"orderNo": "09.9954", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099954&Lang=en&StartDate=2026-10-01", "error": null, "quota": 24235.3, "balance": 0.0, "awaiting": 0.0, "initialQuota": 24235.3, "originLive": "European Union Türkiye", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-23", "lastImportDate": "2026-10-19", "exhaustionDate": "2026-10-19", "critical": "Yes", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:30+03:00"}, "09.9867": {"orderNo": "09.9867", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099867&Lang=en&StartDate=2026-10-01", "error": null, "quota": 13375.791, "balance": 5376.575, "awaiting": 138.273, "initialQuota": 13246.22, "originLive": "European Union Taiwan", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-28", "lastImportDate": "2026-10-26", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:37+03:00"}, "09.9868": {"orderNo": "09.9868", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099868&Lang=en&StartDate=2026-10-01", "error": null, "quota": 15854.574050000001, "balance": 15405.149443, "awaiting": 279.46, "initialQuota": 10107.74, "originLive": "China European Union", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-28", "lastImportDate": "2026-10-26", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:37+03:00"}, "09.9871": {"orderNo": "09.9871", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099871&Lang=en&StartDate=2026-10-01", "error": null, "quota": 18689.926660999998, "balance": 17990.566660999997, "awaiting": 267.289, "initialQuota": 13151.64, "originLive": "European Union South Africa", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-28", "lastImportDate": "2026-10-26", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:37+03:00"}, "09.9872": {"orderNo": "09.9872", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099872&Lang=en&StartDate=2026-10-01", "error": null, "quota": 14731.704368, "balance": 13541.216368000001, "awaiting": 17.27, "initialQuota": 10963.33, "originLive": "European Union Viet Nam", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-28", "lastImportDate": "2026-10-26", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:37+03:00"}, "09.9873": {"orderNo": "09.9873", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099873&Lang=en&StartDate=2026-10-01", "error": null, "quota": 10462.386398, "balance": 8523.799503, "awaiting": 428.042, "initialQuota": 9513.44, "originLive": "European Union India", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-28", "lastImportDate": "2026-10-26", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:37+03:00"}, "09.9511": {"orderNo": "09.9511", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099511&Lang=en&StartDate=2026-10-01", "error": null, "quota": 19870.68, "balance": 19870.68, "awaiting": 0.0, "initialQuota": 9935.34, "originLive": "European Union India Korea, Republic of (South Korea) South Africa Türkiye", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": null, "lastImportDate": null, "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:28+03:00"}, "09.9611": {"orderNo": "09.9611", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099611&Lang=en&StartDate=2026-10-01", "error": null, "quota": 8449.804272, "balance": 5.424244, "awaiting": 0.0, "initialQuota": 8442.57, "originLive": "ERGA OMNES", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-28", "lastImportDate": "2026-10-26", "exhaustionDate": null, "critical": "Yes", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:38+03:00"}, "09.9730": {"orderNo": "09.9730", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099730&Lang=en&StartDate=2026-10-01", "error": null, "quota": 8899.378797, "balance": 8217.001872, "awaiting": 62.105, "initialQuota": 5554.25, "originLive": "FTA partners", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-28", "lastImportDate": "2026-10-26", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:38+03:00"}, "09.9731": {"orderNo": "09.9731", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099731&Lang=en&StartDate=2026-10-01", "error": null, "quota": 409.05, "balance": 215.90547, "awaiting": 24.28, "initialQuota": 409.05, "originLive": "European Union Switzerland", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-28", "lastImportDate": "2026-10-26", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:38+03:00"}, "09.9493": {"orderNo": "09.9493", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099493&Lang=en&StartDate=2026-10-01", "error": null, "quota": 57.616, "balance": 57.063552, "awaiting": 0.086, "initialQuota": 31.27, "originLive": "European Union United Kingdom", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-21", "lastImportDate": "2026-10-13", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:38+03:00"}, "09.9860": {"orderNo": "09.9860", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099860&Lang=en&StartDate=2026-10-01", "error": null, "quota": 4995.96, "balance": 2960.1145610000003, "awaiting": 18.551, "initialQuota": 4995.96, "originLive": "European Union Taiwan", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-13", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:44+03:00"}, "09.9861": {"orderNo": "09.9861", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099861&Lang=en&StartDate=2026-10-01", "error": null, "quota": 8960.7, "balance": 8951.274, "awaiting": 0.0, "initialQuota": 8960.7, "originLive": "European Union Indonesia", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-10", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:44+03:00"}, "09.9862": {"orderNo": "09.9862", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099862&Lang=en&StartDate=2026-10-01", "error": null, "quota": 6504.78, "balance": 4822.1993600000005, "awaiting": 68.456, "initialQuota": 6504.78, "originLive": "European Union India", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-16", "lastImportDate": "2026-10-14", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:44+03:00"}, "09.9863": {"orderNo": "09.9863", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099863&Lang=en&StartDate=2026-10-01", "error": null, "quota": 2378.85, "balance": 2215.000455, "awaiting": 1.258, "initialQuota": 2378.85, "originLive": "China European Union", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-16", "lastImportDate": "2026-10-14", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:44+03:00"}, "09.9866": {"orderNo": "09.9866", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099866&Lang=en&StartDate=2026-10-01", "error": null, "quota": 3021.64, "balance": 2803.554, "awaiting": 0.0, "initialQuota": 3021.64, "originLive": "European Union South Africa", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-12", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:44+03:00"}, "09.9510": {"orderNo": "09.9510", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099510&Lang=en&StartDate=2026-10-01", "error": null, "quota": 4174.599647, "balance": 4174.599647, "awaiting": 0.0, "initialQuota": 2806.15, "originLive": "European Union India Indonesia Korea, Republic of (South Korea) South Africa Türkiye", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": null, "lastImportDate": null, "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:28+03:00"}, "09.9610": {"orderNo": "09.9610", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099610&Lang=en&StartDate=2026-10-01", "error": null, "quota": 572.32, "balance": 134.445419, "awaiting": 2.652, "initialQuota": 572.32, "originLive": "ERGA OMNES", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-16", "lastImportDate": "2026-10-14", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:44+03:00"}, "09.9729": {"orderNo": "09.9729", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099729&Lang=en&StartDate=2026-10-01", "error": null, "quota": 427.29, "balance": 427.1151, "awaiting": 0.0, "initialQuota": 427.29, "originLive": "FTA partners", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-16", "lastImportDate": "2026-10-14", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:44+03:00"}, "09.9492": {"orderNo": "09.9492", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099492&Lang=en&StartDate=2026-10-01", "error": null, "quota": 13.35, "balance": 13.35, "awaiting": 0.0, "initialQuota": 13.35, "originLive": "European Union United Kingdom", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": null, "lastImportDate": null, "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:44+03:00"}, "09.9855": {"orderNo": "09.9855", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099855&Lang=en&StartDate=2026-10-01", "error": null, "quota": 53152.58, "balance": 33861.054348, "awaiting": 0.0, "initialQuota": 53152.58, "originLive": "European Union Indonesia", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-09", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:18+03:00"}, "09.9856": {"orderNo": "09.9856", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099856&Lang=en&StartDate=2026-10-01", "error": null, "quota": 52709.57, "balance": 0.0, "awaiting": 0.0, "initialQuota": 52709.57, "originLive": "European Union India", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-07", "lastImportDate": "2026-10-01", "exhaustionDate": "2026-10-01", "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:18+03:00"}, "09.9857": {"orderNo": "09.9857", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099857&Lang=en&StartDate=2026-10-01", "error": null, "quota": 23294.11, "balance": 11086.013, "awaiting": 0.0, "initialQuota": 23294.11, "originLive": "European Union Japan", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-07", "lastImportDate": "2026-10-02", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:18+03:00"}, "09.9858": {"orderNo": "09.9858", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099858&Lang=en&StartDate=2026-10-01", "error": null, "quota": 20671.86, "balance": 10606.398439999999, "awaiting": 981.393, "initialQuota": 20671.86, "originLive": "European Union North Macedonia", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-16", "lastImportDate": "2026-10-14", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:18+03:00"}, "09.9859": {"orderNo": "09.9859", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099859&Lang=en&StartDate=2026-10-01", "error": null, "quota": 8284.85, "balance": 4329.70754, "awaiting": 513.604, "initialQuota": 8284.85, "originLive": "European Union United Kingdom", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-16", "lastImportDate": "2026-10-14", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:18+03:00"}, "09.9509": {"orderNo": "09.9509", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099509&Lang=en&StartDate=2026-10-01", "error": null, "quota": 22682.31, "balance": 11362.490328, "awaiting": 0.0, "initialQuota": 22682.31, "originLive": "European Union India Indonesia Korea, Republic of (South Korea) North Macedonia United Kingdom", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-28", "lastImportDate": "2026-10-21", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:28+03:00"}, "09.9609": {"orderNo": "09.9609", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099609&Lang=en&StartDate=2026-10-01", "error": null, "quota": 18829.77, "balance": 0.0, "awaiting": 0.0, "initialQuota": 18829.77, "originLive": "ERGA OMNES", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-01", "exhaustionDate": "2026-10-01", "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:18+03:00"}, "09.9727": {"orderNo": "09.9727", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099727&Lang=en&StartDate=2026-10-01", "error": null, "quota": 7414.97, "balance": 7128.54309, "awaiting": 88.518, "initialQuota": 7414.97, "originLive": "FTA partners", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-16", "lastImportDate": "2026-10-14", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:18+03:00"}, "09.9491": {"orderNo": "09.9491", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099491&Lang=en&StartDate=2026-10-01", "error": null, "quota": 5260.44, "balance": 4648.689, "awaiting": 0.0, "initialQuota": 5260.44, "originLive": "European Union United Kingdom", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-10", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:18+03:00"}, "09.9813": {"orderNo": "09.9813", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099813&Lang=en&StartDate=2026-10-01", "error": null, "quota": 526.03, "balance": 409.289, "awaiting": 20.858, "initialQuota": 526.03, "originLive": "European Union United Kingdom", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-12", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:34+03:00"}, "09.9814": {"orderNo": "09.9814", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099814&Lang=en&StartDate=2026-10-01", "error": null, "quota": 127.34, "balance": 0.0, "awaiting": 0.0, "initialQuota": 127.34, "originLive": "European Union United States", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-07", "lastImportDate": "2026-10-01", "exhaustionDate": "2026-10-01", "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:34+03:00"}, "09.9815": {"orderNo": "09.9815", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099815&Lang=en&StartDate=2026-10-01", "error": null, "quota": 243.93, "balance": 199.956, "awaiting": 11.272, "initialQuota": 243.93, "originLive": "European Union Japan", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-08", "lastImportDate": "2026-10-06", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:34+03:00"}, "09.9816": {"orderNo": "09.9816", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099816&Lang=en&StartDate=2026-10-01", "error": null, "quota": 35.59, "balance": 35.59, "awaiting": 0.098, "initialQuota": 35.59, "originLive": "China European Union", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": null, "lastImportDate": null, "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:34+03:00"}, "09.9501": {"orderNo": "09.9501", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099501&Lang=en&StartDate=2026-10-01", "error": null, "quota": 106.52, "balance": 106.52, "awaiting": 0.0, "initialQuota": 106.52, "originLive": "European Union United Kingdom", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": null, "lastImportDate": null, "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:34+03:00"}, "09.9817": {"orderNo": "09.9817", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099817&Lang=en&StartDate=2026-10-01", "error": null, "quota": 33586.54, "balance": 33584.46, "awaiting": 0.0, "initialQuota": 33586.54, "originLive": "European Union Taiwan", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-12", "lastImportDate": "2026-10-08", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:38+03:00"}, "09.9818": {"orderNo": "09.9818", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099818&Lang=en&StartDate=2026-10-01", "error": null, "quota": 67493.58, "balance": 43669.182, "awaiting": 9252.269, "initialQuota": 67493.58, "originLive": "European Union India", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-16", "lastImportDate": "2026-10-14", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:39+03:00"}, "09.9821": {"orderNo": "09.9821", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099821&Lang=en&StartDate=2026-10-01", "error": null, "quota": 19834.63, "balance": 19561.081, "awaiting": 0.187, "initialQuota": 19834.63, "originLive": "European Union United Kingdom", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-16", "lastImportDate": "2026-10-14", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:39+03:00"}, "09.9822": {"orderNo": "09.9822", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099822&Lang=en&StartDate=2026-10-01", "error": null, "quota": 29457.81, "balance": 29441.248219999998, "awaiting": 0.0, "initialQuota": 29457.81, "originLive": "European Union Japan", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-16", "lastImportDate": "2026-10-14", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:39+03:00"}, "09.9823": {"orderNo": "09.9823", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099823&Lang=en&StartDate=2026-10-01", "error": null, "quota": 26549.48, "balance": 25500.04, "awaiting": 0.0, "initialQuota": 26549.48, "originLive": "European Union Ukraine", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-16", "lastImportDate": "2026-10-14", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:39+03:00"}, "09.9502": {"orderNo": "09.9502", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099502&Lang=en&StartDate=2026-10-01", "error": null, "quota": 65686.356, "balance": 65686.356, "awaiting": 0.0, "initialQuota": 33670.61, "originLive": "European Union India Korea, Republic of (South Korea) Türkiye Ukraine United Kingdom", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": null, "lastImportDate": null, "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:27+03:00"}, "09.9602": {"orderNo": "09.9602", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099602&Lang=en&StartDate=2026-10-01", "error": null, "quota": 24933.92, "balance": 0.0, "awaiting": 0.0, "initialQuota": 24933.92, "originLive": "ERGA OMNES", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-16", "lastImportDate": "2026-10-01", "exhaustionDate": "2026-10-01", "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:39+03:00"}, "09.9707": {"orderNo": "09.9707", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099707&Lang=en&StartDate=2026-10-01", "error": null, "quota": 21283.6, "balance": 1952.3278030000001, "awaiting": 5473.89, "initialQuota": 21283.6, "originLive": "FTA partners", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-16", "lastImportDate": "2026-10-14", "exhaustionDate": null, "critical": "Yes", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:39+03:00"}, "09.9709": {"orderNo": "09.9709", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099709&Lang=en&StartDate=2026-10-01", "error": null, "quota": 1294.54, "balance": 188.61630499999998, "awaiting": 0.0, "initialQuota": 1294.54, "originLive": "Egypt European Union", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-13", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:39+03:00"}, "09.9710": {"orderNo": "09.9710", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099710&Lang=en&StartDate=2026-10-01", "error": null, "quota": 745.65, "balance": 404.47888, "awaiting": 83.333, "initialQuota": 745.65, "originLive": "European Union Switzerland", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-16", "lastImportDate": "2026-10-14", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:39+03:00"}, "09.9708": {"orderNo": "09.9708", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099708&Lang=en&StartDate=2026-10-01", "error": null, "quota": 3533.82, "balance": 3481.1754, "awaiting": 0.0, "initialQuota": 3533.82, "originLive": "Brazil European Union", "taricUpdated": "2026-10-16", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-15", "lastImportDate": "2026-10-13", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-10-19T08:21:39+03:00"}, "09.9503": {"orderNo": "09.9503", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099503&Lang=en&StartDate=2026-10-01", "error": null, "quota": 58.1, "balance": 58.1, "awaiting": 0.0, "initialQuota": 29.05, "originLive": "European Union Türkiye United Kingdom", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": null, "lastImportDate": null, "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:27+03:00"}, "09.9712": {"orderNo": "09.9712", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099712&Lang=en&StartDate=2026-10-01", "error": null, "quota": 8171.481, "balance": 8171.481, "awaiting": 0.0, "initialQuota": 4094.55, "originLive": "FTA partners", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": null, "lastImportDate": null, "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:27+03:00"}, "09.9505": {"orderNo": "09.9505", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099505&Lang=en&StartDate=2026-10-01", "error": null, "quota": 38889.927723, "balance": 3074.9927390000003, "awaiting": 6.57, "initialQuota": 38881.49, "originLive": "European Union India Korea, Republic of (South Korea) Türkiye", "taricUpdated": "2026-10-30", "periodStart": "2026-01-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-21", "lastImportDate": "2026-10-09", "exhaustionDate": null, "critical": "Yes", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:27+03:00"}, "09.9506": {"orderNo": "09.9506", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099506&Lang=en&StartDate=2026-10-01", "error": null, "quota": 19514.4, "balance": 15192.690881999999, "awaiting": 0.874, "initialQuota": 19514.4, "originLive": "European Union India Korea, Republic of (South Korea) Türkiye United Kingdom", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-28", "lastImportDate": "2026-10-26", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:27+03:00"}, "09.9507": {"orderNo": "09.9507", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099507&Lang=en&StartDate=2026-10-01", "error": null, "quota": 12575.71, "balance": 0.0, "awaiting": 0.0, "initialQuota": 12575.71, "originLive": "European Union India Korea, Republic of (South Korea) Türkiye United Kingdom", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-26", "lastImportDate": "2026-10-16", "exhaustionDate": "2026-10-16", "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:28+03:00"}, "09.9508": {"orderNo": "09.9508", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099508&Lang=en&StartDate=2026-10-01", "error": null, "quota": 14865.317396, "balance": 14865.317396, "awaiting": 0.0, "initialQuota": 11254.86, "originLive": "European Union India Korea, Republic of (South Korea) Türkiye United Kingdom", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": null, "lastImportDate": null, "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:28+03:00"}, "09.9732": {"orderNo": "09.9732", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099732&Lang=en&StartDate=2026-10-01", "error": null, "quota": 500.8849, "balance": 500.8849, "awaiting": 0.0, "initialQuota": 271.23, "originLive": "FTA partners", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": null, "lastImportDate": null, "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:28+03:00"}, "09.9513": {"orderNo": "09.9513", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099513&Lang=en&StartDate=2026-10-01", "error": null, "quota": 27348.884276, "balance": 27348.884276, "awaiting": 0.0, "initialQuota": 14063.24, "originLive": "European Union Korea, Republic of (South Korea) North Macedonia Switzerland Türkiye United Kingdom", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": null, "lastImportDate": null, "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:28+03:00"}, "09.9514": {"orderNo": "09.9514", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099514&Lang=en&StartDate=2026-10-01", "error": null, "quota": 39700.84, "balance": 21259.472662, "awaiting": 1.904, "initialQuota": 39700.84, "originLive": "Egypt European Union Türkiye Ukraine", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-19", "lastImportDate": "2026-10-15", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:28+03:00"}, "09.9738": {"orderNo": "09.9738", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099738&Lang=en&StartDate=2026-10-01", "error": null, "quota": 145.69, "balance": 142.622, "awaiting": 0.0, "initialQuota": 145.69, "originLive": "FTA partners", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-08", "lastImportDate": "2026-10-06", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:28+03:00"}, "09.9517": {"orderNo": "09.9517", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099517&Lang=en&StartDate=2026-10-01", "error": null, "quota": 30720.34, "balance": 13195.407258, "awaiting": 3.687, "initialQuota": 30720.34, "originLive": "Egypt European Union Switzerland Türkiye Ukraine United Kingdom", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-28", "lastImportDate": "2026-10-26", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:29+03:00"}, "09.9518": {"orderNo": "09.9518", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099518&Lang=en&StartDate=2026-10-01", "error": null, "quota": 4720.06104, "balance": 4720.06104, "awaiting": 0.0, "initialQuota": 3032.46, "originLive": "European Union Switzerland Türkiye United Kingdom", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": null, "lastImportDate": null, "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:29+03:00"}, "09.9520": {"orderNo": "09.9520", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099520&Lang=en&StartDate=2026-10-01", "error": null, "quota": 321.785013, "balance": 321.785013, "awaiting": 0.0, "initialQuota": 286.0, "originLive": "European Union Türkiye United Kingdom", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": null, "lastImportDate": null, "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:29+03:00"}, "09.9521": {"orderNo": "09.9521", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099521&Lang=en&StartDate=2026-10-01", "error": null, "quota": 3910.55, "balance": 0.0, "awaiting": 0.0, "initialQuota": 3910.55, "originLive": "European Union India North Macedonia Türkiye United Kingdom", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-21", "lastImportDate": "2026-10-01", "exhaustionDate": "2026-10-01", "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:29+03:00"}, "09.9522": {"orderNo": "09.9522", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099522&Lang=en&StartDate=2026-10-01", "error": null, "quota": 8487.11, "balance": 0.0, "awaiting": 0.0, "initialQuota": 8487.11, "originLive": "European Union North Macedonia Türkiye Ukraine United Kingdom", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-19", "lastImportDate": "2026-10-01", "exhaustionDate": "2026-10-01", "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:29+03:00"}, "09.9749": {"orderNo": "09.9749", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099749&Lang=en&StartDate=2026-10-01", "error": null, "quota": 446.75, "balance": 0.0, "awaiting": 0.0, "initialQuota": 446.75, "originLive": "FTA partners", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-21", "lastImportDate": "2026-10-15", "exhaustionDate": "2026-10-15", "critical": "Yes", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:29+03:00"}, "09.9525": {"orderNo": "09.9525", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099525&Lang=en&StartDate=2026-10-01", "error": null, "quota": 1567.567, "balance": 782.467, "awaiting": 0.0, "initialQuota": 1387.41, "originLive": "European Union India Türkiye", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-28", "lastImportDate": "2026-10-26", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:29+03:00"}, "09.9526": {"orderNo": "09.9526", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099526&Lang=en&StartDate=2026-10-01", "error": null, "quota": 4059.5, "balance": 4059.5, "awaiting": 0.0, "initialQuota": 2029.75, "originLive": "European Union Türkiye United Kingdom", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": null, "lastImportDate": null, "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:29+03:00"}, "09.9527": {"orderNo": "09.9527", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099527&Lang=en&StartDate=2026-10-01", "error": null, "quota": 4057.59, "balance": 0.0, "awaiting": 0.0, "initialQuota": 4057.59, "originLive": "European Union India Switzerland Türkiye United Kingdom", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-28", "lastImportDate": "2026-10-22", "exhaustionDate": "2026-10-22", "critical": "Yes", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:29+03:00"}, "09.9528": {"orderNo": "09.9528", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099528&Lang=en&StartDate=2026-10-01", "error": null, "quota": 1795.414757, "balance": 1795.414757, "awaiting": 0.0, "initialQuota": 1491.29, "originLive": "European Union Switzerland Türkiye Ukraine", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": null, "lastImportDate": null, "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:30+03:00"}, "09.9529": {"orderNo": "09.9529", "sourceUrl": "https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=099529&Lang=en&StartDate=2026-10-01", "error": null, "quota": 4496.4, "balance": 1838.959003, "awaiting": 413.244, "initialQuota": 4496.4, "originLive": "European Union Türkiye Ukraine", "taricUpdated": "2026-10-30", "periodStart": "2026-10-01", "periodEnd": "2026-12-31", "allocationDate": "2026-10-28", "lastImportDate": "2026-10-26", "exhaustionDate": null, "critical": "No", "closedForDrawing": "No", "fetchedAt": "2026-11-03T18:18:30+03:00"}}}</script>
+<script>
+(() => {
+  const CAT = window.QUOTA_CATALOG;
+  const SNAP = JSON.parse(document.getElementById("snapshot").textContent || "null");
+  const $ = (id) => document.getElementById(id);
+  const STATUS_ORDER = { Exhausted: 3, Critical: 2, Watch: 1, OK: 0, Error: -1 };
+  const TR = "Türkiye", CSQ = "FTA Quota – CSQ", FTA_OTHER = "FTA Quota – Other countries";
+
+  const catInfo = {};
+  CAT.categories.forEach(([c, en], i) => (catInfo[c] = { en, idx: i }));
+
+  const store = {
+    get(k, d) { try { return localStorage.getItem("euq-en." + k) ?? d; } catch { return d; } },
+    set(k, v) { try { localStorage.setItem("euq-en." + k, v); } catch {} }
+  };
+  const state = {
+    tab: store.get("tab", "turkiye"),
+    country: store.get("country", "Türkiye"),
+    category: store.get("category", "1A"),
+    trFilter: "all",
+    live: false,
+    start: CAT.source.period[0],
+    loading: false,
+    fetchedCats: new Set(),
+    sort: { key: "util", dir: -1 },
+    allSort: { key: "util", dir: -1 }
+  };
+
+  // ---------- data ----------
+  const data = {};
+  CAT.orders.forEach(([orderNo, cat, origin, quota, balance, awaiting, alloc]) => {
+    data[orderNo] = { orderNo, cat, origin, quota, balance, awaiting,
+      allocationDate: alloc || null, taricUpdated: CAT.source.snapshotTaricUpdated,
+      fetchedAt: null, source: "catalog", error: null };
+  });
+
+  function merge(it, source) {
+    const o = data[it.orderNo];
+    if (!o) return;
+    if (it.error) { if (source === "live") { o.error = it.error; o.fetchedAt = it.fetchedAt; } return; }
+    Object.assign(o, {
+      quota: it.quota, balance: it.balance, awaiting: it.awaiting,
+      allocationDate: it.allocationDate, taricUpdated: it.taricUpdated,
+      closedForDrawing: it.closedForDrawing, critical: it.critical,
+      fetchedAt: it.fetchedAt, source, error: null
+    });
+  }
+  if (SNAP && SNAP.start === state.start) Object.values(SNAP.items || {}).forEach((it) => merge(it, "snapshot"));
+
+  function calc(o) {
+    const used = Math.max(o.quota - o.balance, 0);
+    const util = o.quota > 0 ? (used + o.awaiting) / o.quota * 100 : 0;
+    let status = "OK";
+    if (util >= 100 || (o.quota > 0 && o.balance <= 0)) status = "Exhausted";
+    else if (util >= 90) status = "Critical";
+    else if (util >= 80) status = "Watch";
+    return { used, util, status };
+  }
+
+  const nf = (v, d = 0) => v == null ? "–" : Number(v).toLocaleString("en-US", { maximumFractionDigits: d });
+  const pf = (v) => v.toFixed(1) + "%";
+  const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const taricUrl = (no) => `https://ec.europa.eu/taxation_customs/dds2/taric/quota_tariff_details.jsp?Code=${no.replace(".", "")}&Lang=en&StartDate=${state.start}`;
+  const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const fmtDate = (iso) => { if (!iso) return "–"; const [y, m, d] = iso.slice(0, 10).split("-"); return `${+d} ${MON[+m - 1]} ${y}`; };
+  const fmtTime = (iso) => { if (!iso) return "–"; const d = new Date(iso); return `${fmtDate(iso)} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
+  const quarterLabel = (iso) => { const [y, m] = iso.split("-").map(Number); return `Q${Math.floor((m - 1) / 3) + 1} ${y}`; };
+  const shortOrigin = (s) => s === FTA_OTHER ? "FTA – Other countries" : s === CSQ ? "FTA – CSQ" : s;
+
+  // Türkiye can use: own quota; backup = CSQ if own quota exists, else FTA – Other countries
+  const trOwn = (cat) => Object.values(data).find((o) => o.cat === cat && o.origin === TR) || null;
+  const trBackup = (cat) => Object.values(data).find((o) => o.cat === cat && o.origin === (trOwn(cat) ? CSQ : FTA_OTHER)) || null;
+  function originClass(o) {
+    if (o.origin === TR) return { cls: "o-tr", backup: false };
+    if (trBackup(o.cat) === o) return { cls: "o-tr", backup: true };
+    return { cls: "", backup: false };
+  }
+
+  const countries = (() => {
+    const set = new Set(CAT.orders.map((r) => r[2]).filter((s) => !/FTA Quota|Other countries|Northern Ireland/.test(s)));
+    const pinned = [TR, "Korea"];
+    return [...pinned, ...[...set].filter((c) => !pinned.includes(c)).sort()];
+  })();
+
+  // By Country: own order per category, otherwise the residual quota
+  function pickOrders(country) {
+    const fallback = country === "Korea" || country === TR ? FTA_OTHER : "Other countries";
+    return CAT.categories.map(([c]) => {
+      const inCat = Object.values(data).filter((o) => o.cat === c);
+      const own = inCat.find((o) => o.origin === country);
+      if (own) return { o: own, alt: false };
+      const fb = inCat.find((o) => o.origin === fallback) || inCat.find((o) => o.origin === "Other countries");
+      return fb ? { o: fb, alt: true } : null;
+    }).filter(Boolean);
+  }
+
+  function dataAsOf(list) {
+    const t = list.map((o) => o.fetchedAt).filter(Boolean).sort().pop();
+    return t || CAT.source.snapshotDate;
+  }
+
+  // ---------- server (live mode, only when opened through server.py) ----------
+  async function ping() {
+    if (location.protocol === "file:") return false;
+    try {
+      const r = await fetch("/api/ping", { cache: "no-store" });
+      if (!r.ok) return false;
+      state.start = (await r.json()).start;
+      return true;
+    } catch { return false; }
+  }
+  async function loadLast() {
+    try {
+      const j = await (await fetch("/api/last", { cache: "no-store" })).json();
+      if (j.start === state.start) Object.values(j.items || {}).forEach((it) => merge(it, "snapshot"));
+    } catch {}
+  }
+  function metaEl() { return $({ turkiye: "trMeta", country: "ctryMeta", category: "catMeta", all: "allMeta" }[state.tab] || "trMeta"); }
+  function setNotice(kind, html) { metaEl().innerHTML = `<div class="notice ${kind}">${html}</div>`; }
+
+  async function refresh(orderNos, label) {
+    if (!state.live || state.loading) return;
+    state.loading = true; setButtons(true);
+    let ok = 0, fail = 0, done = 0;
+    try {
+      for (let i = 0; i < orderNos.length; i += 30) {
+        const ch = orderNos.slice(i, i + 30);
+        setNotice("", `Fetching ${label} from TARIC… ${done}/${orderNos.length}`);
+        const j = await (await fetch(`/api/live?orders=${ch.join(",")}&start=${state.start}`, { cache: "no-store" })).json();
+        (j.items || []).forEach((it) => merge(it, "live"));
+        ok += j.success || 0; fail += j.failed || 0; done += ch.length;
+        render(true);
+      }
+      setNotice(fail ? "warn" : "", fail ? `${ok} of ${orderNos.length} orders updated, ${fail} failed — failed ones keep their previous value.` : `${orderNos.length} orders updated with the latest TARIC values.`);
+    } catch (e) {
+      setNotice("err", "Update failed: " + esc(e.message) + " — check that the server window is still open.");
+    } finally {
+      state.loading = false; setButtons(false); render(true);
+    }
+  }
+  function setButtons(busy) {
+    ["trRefresh", "ctryRefresh", "catRefresh", "allRefresh"].forEach((id) => {
+      $(id).disabled = busy;
+      $(id).textContent = busy ? "↻ Updating…" : id === "allRefresh" ? "↻ Refresh all" : "↻ Refresh";
+    });
+  }
+
+  // ---------- shared pieces ----------
+  const statusVar = { OK: "ok", Watch: "watch", Critical: "crit", Exhausted: "exh" };
+  function pbar(o, c) {
+    const usedP = Math.min(c.used / o.quota * 100 || 0, 100);
+    const awP = Math.min(o.awaiting / o.quota * 100 || 0, 100 - usedP);
+    const col = `var(--${statusVar[c.status]})`;
+    return `<div class="pbar"><i style="width:${usedP}%;background:${col}"></i><i class="aw" style="left:${usedP}%;width:${awP}%;background:${col}"></i></div>`;
+  }
+  function badge(o, c) {
+    const err = o.error ? ` <span class="badge s-Error" title="${esc(o.error)}">Update failed</span>` : "";
+    return `<span class="badge s-${c.status}">${c.status}</span>${err}`;
+  }
+  function kpiHtml(list) {
+    const cs = list.map(calc);
+    const ok = cs.filter((c) => c.status === "OK").length;
+    const alert = cs.filter((c) => c.status === "Watch" || c.status === "Critical").length;
+    const exh = cs.filter((c) => c.status === "Exhausted").length;
+    return `
+      <div class="kpi"><b>${list.length}</b><span>Orders shown</span></div>
+      <div class="kpi"><b class="c-OK">${ok}</b><span>OK (below 80%)</span></div>
+      <div class="kpi"><b class="c-Critical">${alert}</b><span>Watch / Critical (80–100%)</span></div>
+      <div class="kpi"><b class="c-Exhausted">${exh}</b><span>Exhausted</span></div>`;
+  }
+  function metaLine(list) {
+    const src = list.some((o) => o.source === "live") ? "Live TARIC" : "Snapshot";
+    const upd = list.map((o) => o.taricUpdated).filter(Boolean).sort().pop();
+    return `${src} · data as of ${fmtTime(dataAsOf(list))} · last TARIC update ${fmtDate(upd)}`;
+  }
+
+  // ---------- Türkiye overview ----------
+  function trCell(o, sep) {
+    const s = sep ? " sep" : "";
+    if (!o) return `<td class="${s}" colspan="3"><span class="badge s-None">No quota</span></td>`;
+    const k = calc(o);
+    return `<td class="util${s}">${pbar(o, k)}<b class="c-${k.status}">${pf(k.util)}</b></td>
+      <td class="num cell"><b>${nf(o.balance)}</b><div class="ln">of ${nf(o.quota)} t</div></td>
+      <td class="cell">${badge(o, k)}<div class="ln"><a href="${taricUrl(o.orderNo)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${o.orderNo} ↗</a></div></td>`;
+  }
+  function renderTurkiye() {
+    const rows = CAT.categories.map(([c]) => ({ c, own: trOwn(c), bk: trBackup(c) }));
+    const owns = rows.map((r) => r.own).filter(Boolean);
+    const cs = owns.map(calc);
+    const left = owns.reduce((s, o) => s + Math.max(o.balance - o.awaiting, 0), 0);
+    $("trKpis").innerHTML = `
+      <div class="kpi"><b>${owns.length}<small> / ${rows.length}</small></b><span>Categories with a Türkiye quota</span></div>
+      <div class="kpi"><b class="c-Exhausted">${cs.filter((c) => c.status === "Exhausted").length}</b><span>Türkiye quotas exhausted</span></div>
+      <div class="kpi"><b class="c-Critical">${cs.filter((c) => c.status === "Watch" || c.status === "Critical").length}</b><span>Türkiye quotas at 80–100%</span></div>
+      <div class="kpi"><b>${nf(left)}<small> t</small></b><span>Türkiye balance left (minus awaiting)</span></div>`;
+    if (!state.loading && !$("trMeta").querySelector(".notice")) $("trMeta").textContent = metaLine(rows.flatMap((r) => [r.own, r.bk]).filter(Boolean));
+
+    const f = state.trFilter;
+    const shown = rows.filter((r) => {
+      if (f === "own") return r.own;
+      if (f === "alert") return r.own && calc(r.own).util >= 80;
+      if (f === "avail") return r.own && calc(r.own).status !== "Exhausted";
+      return true;
+    });
+    const head = `<thead>
+      <tr><th class="nosort" rowspan="2">Category</th><th class="grp own sep" colspan="3">TÜRKİYE QUOTA</th><th class="grp sep" colspan="4">BACKUP QUOTA USABLE BY TÜRKİYE</th></tr>
+      <tr><th class="nosort sep">Utilisation</th><th class="nosort num">Balance (t)</th><th class="nosort">Status</th>
+          <th class="nosort sep">Pool</th><th class="nosort">Utilisation</th><th class="nosort num">Balance (t)</th><th class="nosort">Status</th></tr></thead>`;
+    const body = shown.length ? shown.map((r) => `<tr class="row" data-cat="${r.c}">
+        <td class="prod"><b>${r.c} · ${esc(catInfo[r.c].en)}</b><span>${Object.values(data).filter((o) => o.cat === r.c).length} origins — view category →</span></td>
+        ${trCell(r.own, true)}
+        <td class="sep">${r.bk ? esc(shortOrigin(r.bk.origin)) : "–"}</td>
+        ${r.bk ? trCell(r.bk, false) : `<td colspan="3">–</td>`}
+      </tr>`).join("") : `<tr><td class="empty" colspan="8">No categories match this filter.</td></tr>`;
+    $("trTable").innerHTML = head + `<tbody>${body}</tbody>`;
+  }
+
+  // ---------- By Country ----------
+  function renderCountry() {
+    const c = state.country;
+    const picks = pickOrders(c);
+    const own = picks.filter((p) => !p.alt).length;
+    const fbName = c === "Korea" || c === TR ? "FTA – Other countries" : "Other countries";
+    $("ctryKicker").textContent = `${c.toUpperCase()} / ${fbName.toUpperCase()}`;
+    $("ctryTitle").textContent = `Quotas for ${c}`;
+    $("ctrySub").textContent = `${own} own quotas · ${picks.length - own} categories without own quota show ${fbName}`;
+    if (!state.loading && !$("ctryMeta").querySelector(".notice")) $("ctryMeta").textContent = metaLine(picks.map((p) => p.o));
+    $("ctryKpis").innerHTML = kpiHtml(picks.map((p) => p.o));
+
+    const H = 190, MAX = 125;
+    const lines = [0, 50, 80, 90, 100, 125].map((v) =>
+      `<div class="gl ${v === 100 ? "l100" : ""}" style="top:${22 + 18 + H - v / MAX * H}px"><span>${v}%</span></div>`).join("");
+    const cols = picks.map(({ o, alt }) => {
+      const k = calc(o);
+      const usedP = Math.min(k.used / o.quota * 100 || 0, MAX);
+      const awP = Math.min(o.awaiting / o.quota * 100 || 0, MAX - usedP);
+      const col = `var(--${statusVar[k.status]})`;
+      return `<div class="col ${alt ? "alt" : ""}" data-order="${o.orderNo}" title="${esc(o.origin)} ${o.orderNo}&#10;Used ${nf(k.used)} t · Awaiting ${nf(o.awaiting)} t&#10;Quota ${nf(o.quota)} t">
+        <div class="pct c-${k.status}">${k.util.toFixed(1)}%</div>
+        <div class="bararea">
+          <div class="seg" style="bottom:0;height:${usedP / MAX * H}px;background:${col}"></div>
+          <div class="seg" style="bottom:${usedP / MAX * H}px;height:${awP / MAX * H}px;background:${col};opacity:.4"></div>
+        </div>
+        <div class="lab">Cat. ${o.cat}<em>${esc(alt ? shortOrigin(o.origin).replace("FTA – Other countries", "FTA-Other") : o.origin)}</em><em style="color:#94a3b8">${o.orderNo}</em></div>
+      </div>`;
+    }).join("");
+    $("ctryChart").innerHTML = lines + cols;
+    $("ctryCards").innerHTML = picks.map(({ o, alt }) => orderCard(o, alt)).join("");
+  }
+
+  function orderCard(o, alt) {
+    const k = calc(o), ci = catInfo[o.cat];
+    const flags = [o.critical === "Yes" ? "TARIC critical" : "", o.closedForDrawing === "Yes" ? "Closed for drawing" : ""].filter(Boolean).join(" · ");
+    return `<article class="oc ${originClass(o).cls}" id="card-${o.orderNo.replace(".", "")}">
+      <div class="oc-h">
+        <div><h4>${o.cat} · ${esc(ci.en)}</h4><p>${esc(o.origin)}${alt ? " <b style='color:var(--gold)'>(residual quota)</b>" : ""}</p></div>
+        <div>${badge(o, k)}</div>
+      </div>
+      <div class="big c-${k.status}">${pf(k.util)}<small>Used + Awaiting</small></div>
+      ${pbar(o, k)}
+      <div class="triple">
+        <div><span>Used</span><b>${nf(k.used)}</b></div>
+        <div><span>Balance</span><b>${nf(o.balance)}</b></div>
+        <div><span>Awaiting</span><b>${nf(o.awaiting)}</b></div>
+      </div>
+      <div class="fine">Quota ${nf(o.quota)} t · ${fmtDate(CAT.source.period[0])} – ${fmtDate(CAT.source.period[1])}</div>
+      <div class="fine">Last allocation ${fmtDate(o.allocationDate)} · TARIC update ${fmtDate(o.taricUpdated)}${o.fetchedAt ? " · fetched " + fmtTime(o.fetchedAt) : ""}${flags ? " · <b>" + flags + "</b>" : ""}</div>
+      <div class="oc-f"><span class="fine">Official EU TARIC page</span><a href="${taricUrl(o.orderNo)}" target="_blank" rel="noopener">${o.orderNo} ↗</a></div>
+    </article>`;
+  }
+
+  // ---------- tables (category / all) ----------
+  const COLS = [
+    { key: "cat", label: "Cat." },
+    { key: "origin", label: "Origin" },
+    { key: "orderNo", label: "Order No." },
+    { key: "quota", label: "Quota (t)", num: true },
+    { key: "used", label: "Used (t)", num: true },
+    { key: "awaiting", label: "Awaiting (t)", num: true },
+    { key: "balance", label: "Balance (t)", num: true },
+    { key: "util", label: "Utilisation" },
+    { key: "status", label: "Status" },
+    { key: "allocationDate", label: "Last allocation" }
+  ];
+  function sortVal(o, key) {
+    const k = calc(o);
+    if (key === "used") return k.used;
+    if (key === "util") return k.util;
+    if (key === "status") return STATUS_ORDER[k.status] * 1000 + k.util;
+    if (key === "cat") return catInfo[o.cat].idx;
+    return o[key] ?? "";
+  }
+  function tableHtml(list, sort, showCat) {
+    const cols = COLS.filter((c) => showCat || c.key !== "cat");
+    const sorted = [...list].sort((a, b) => {
+      const x = sortVal(a, sort.key), y = sortVal(b, sort.key);
+      return (x > y ? 1 : x < y ? -1 : 0) * sort.dir;
+    });
+    const head = `<thead><tr>${cols.map((c) => `<th class="${c.num ? "num" : ""}" data-key="${c.key}">${c.label}${sort.key === c.key ? `<span class="arr">${sort.dir < 0 ? "▼" : "▲"}</span>` : ""}</th>`).join("")}</tr></thead>`;
+    if (!sorted.length) return head + `<tbody><tr><td class="empty" colspan="${cols.length}">No orders match these filters.</td></tr></tbody>`;
+    const rows = sorted.map((o) => {
+      const k = calc(o), oc = originClass(o);
+      const tag = oc.backup ? `<span class="tag-tr">usable by Türkiye</span>` : "";
+      const cells = {
+        cat: `<td>${o.cat}</td>`,
+        origin: `<td class="org">${esc(o.origin)}${tag}</td>`,
+        orderNo: `<td><a href="${taricUrl(o.orderNo)}" target="_blank" rel="noopener">${o.orderNo}</a></td>`,
+        quota: `<td class="num">${nf(o.quota)}</td>`,
+        used: `<td class="num">${nf(k.used)}</td>`,
+        awaiting: `<td class="num">${nf(o.awaiting)}</td>`,
+        balance: `<td class="num">${nf(o.balance)}</td>`,
+        util: `<td class="util">${pbar(o, k)}<b class="c-${k.status}">${pf(k.util)}</b></td>`,
+        status: `<td>${badge(o, k)}</td>`,
+        allocationDate: `<td>${fmtDate(o.allocationDate)}</td>`
+      };
+      return `<tr class="${oc.cls}">${cols.map((c) => cells[c.key]).join("")}</tr>`;
+    }).join("");
+    return head + `<tbody>${rows}</tbody>`;
+  }
+
+  function renderCategory() {
+    const c = state.category, ci = catInfo[c];
+    const list = Object.values(data).filter((o) => o.cat === c);
+    $("catKicker").textContent = `CATEGORY ${c}`;
+    $("catTitle").textContent = `${c} · ${ci.en}`;
+    $("catSub").textContent = `${list.length} origins · sorted by utilisation (click a column header to sort)`;
+    $("catSel").innerHTML = CAT.categories.map(([code, en]) => {
+      const n = Object.values(data).filter((o) => o.cat === code && calc(o).util >= 80).length;
+      return `<option value="${code}">${code} · ${esc(en)}${n ? `  (⚠ ${n} at 80%+)` : ""}</option>`;
+    }).join("");
+    $("catSel").value = c;
+    if (!state.loading && !$("catMeta").querySelector(".notice")) $("catMeta").textContent = metaLine(list);
+    $("catKpis").innerHTML = kpiHtml(list);
+    $("catTable").innerHTML = tableHtml(list, state.sort, false);
+  }
+
+  function renderAll() {
+    const q = $("q").value.trim().toLowerCase();
+    const cf = $("catFilter").value, sf = $("statusFilter").value;
+    const list = Object.values(data).filter((o) => {
+      const k = calc(o);
+      if (cf !== "all" && o.cat !== cf) return false;
+      if (sf === "alert" && k.util < 80) return false;
+      if (!["all", "alert"].includes(sf) && k.status !== sf) return false;
+      if (q) {
+        const hay = `${o.orderNo} ${o.origin} ${o.origin === TR ? "turkey turkiye" : ""} ${o.cat} ${catInfo[o.cat].en}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+    if (!state.loading && !$("allMeta").querySelector(".notice")) $("allMeta").textContent = metaLine(Object.values(data)) + ` · showing ${list.length} of ${CAT.orders.length}`;
+    $("allKpis").innerHTML = kpiHtml(list);
+    $("allTable").innerHTML = tableHtml(list, state.allSort, true);
+  }
+
+  function render(keepNotice) {
+    document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === state.tab));
+    ["turkiye", "country", "category", "all", "help"].forEach((t) => $("tab-" + t).classList.toggle("hidden", t !== state.tab));
+    if (state.tab === "turkiye") renderTurkiye();
+    if (state.tab === "country") renderCountry();
+    if (state.tab === "category") renderCategory();
+    if (state.tab === "all") renderAll();
+  }
+
+  // ---------- events ----------
+  function switchTab(t) {
+    state.tab = t; store.set("tab", t);
+    ["trMeta", "ctryMeta", "catMeta", "allMeta"].forEach((id) => ($(id).innerHTML = ""));
+    render();
+    if (t === "category") autoFetchCategory();
+    if (t === "country") autoFetchCountry();
+  }
+  function autoFetchCountry() {
+    const key = "ctry:" + state.country;
+    if (state.live && !state.fetchedCats.has(key)) {
+      state.fetchedCats.add(key);
+      refresh(pickOrders(state.country).map((p) => p.o.orderNo), `orders for ${state.country}`);
+    }
+  }
+  function autoFetchCategory() {
+    if (state.live && !state.fetchedCats.has(state.category)) {
+      state.fetchedCats.add(state.category);
+      refresh(Object.values(data).filter((o) => o.cat === state.category).map((o) => o.orderNo), `category ${state.category}`);
+    }
+  }
+  const trOrders = () => CAT.categories.flatMap(([c]) => [trOwn(c), trBackup(c)]).filter(Boolean).map((o) => o.orderNo);
+
+  $("tabs").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) switchTab(b.dataset.tab); });
+  $("trChips").addEventListener("click", (e) => {
+    const b = e.target.closest(".chip"); if (!b) return;
+    state.trFilter = b.dataset.f;
+    document.querySelectorAll("#trChips .chip").forEach((x) => x.classList.toggle("on", x === b));
+    renderTurkiye();
+  });
+  $("trTable").addEventListener("click", (e) => {
+    const r = e.target.closest("tr.row"); if (!r) return;
+    state.category = r.dataset.cat; store.set("category", state.category);
+    switchTab("category");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+  $("trRefresh").addEventListener("click", () => refresh(trOrders(), "Türkiye-related orders"));
+
+  $("countrySel").innerHTML = countries.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
+  if (!countries.includes(state.country)) state.country = TR;
+  $("countrySel").value = state.country;
+  $("countrySel").addEventListener("change", (e) => {
+    state.country = e.target.value; store.set("country", state.country);
+    $("ctryMeta").innerHTML = "";
+    render(); autoFetchCountry();
+  });
+  $("ctryRefresh").addEventListener("click", () =>
+    refresh(pickOrders(state.country).map((p) => p.o.orderNo), `orders for ${state.country}`));
+  $("ctryChart").addEventListener("click", (e) => {
+    const col = e.target.closest(".col"); if (!col) return;
+    const card = $("card-" + col.dataset.order.replace(".", ""));
+    if (!card) return;
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
+    card.classList.add("flash"); setTimeout(() => card.classList.remove("flash"), 1400);
+  });
+  $("catRefresh").addEventListener("click", () =>
+    refresh(Object.values(data).filter((o) => o.cat === state.category).map((o) => o.orderNo), `category ${state.category}`));
+  $("allRefresh").addEventListener("click", () => refresh(Object.keys(data), `all ${CAT.orders.length} orders (about 1 min)`));
+  $("catSel").addEventListener("change", (e) => {
+    state.category = e.target.value; store.set("category", state.category);
+    $("catMeta").innerHTML = "";
+    render(); autoFetchCategory();
+  });
+  function bindSort(tableId, sortObj) {
+    $(tableId).addEventListener("click", (e) => {
+      const th = e.target.closest("th"); if (!th || !th.dataset.key) return;
+      const key = th.dataset.key;
+      if (sortObj.key === key) sortObj.dir *= -1; else { sortObj.key = key; sortObj.dir = ["origin", "orderNo", "cat"].includes(key) ? 1 : -1; }
+      render();
+    });
+  }
+  bindSort("catTable", state.sort);
+  bindSort("allTable", state.allSort);
+
+  $("catFilter").innerHTML += CAT.categories.map(([c, en]) => `<option value="${c}">${c} · ${esc(en)}</option>`).join("");
+  ["q", "catFilter", "statusFilter"].forEach((id) => $(id).addEventListener("input", () => { $("allMeta").innerHTML = ""; renderAll(); }));
+  $("footCount").textContent = `${CAT.categories.length} categories · ${CAT.orders.length} orders · regulation valid ${fmtDate(CAT.source.validity[0])} – ${fmtDate(CAT.source.validity[1])}`;
+
+  function showGlobalWarnings() {
+    const msgs = [];
+    const today = new Date().toISOString().slice(0, 10);
+    if (today > CAT.source.period[1]) msgs.push(`This dashboard covers <b>${quarterLabel(CAT.source.period[0])}</b> (until ${fmtDate(CAT.source.period[1])}). A new quarter has started — the figures below are out of date.`);
+    if (!state.live) {
+      const age = (Date.now() - new Date(dataAsOf(Object.values(data)))) / 864e5;
+      if (age > 3) msgs.push(`Data is ${Math.floor(age)} days old. Ask the Istanbul office for an updated file, or check TARIC directly via the order links.`);
+    }
+    $("globalNotice").innerHTML = msgs.join("<br>");
+    $("globalNotice").classList.toggle("hidden", !msgs.length);
+  }
+
+  // ---------- start ----------
+  (async () => {
+    document.querySelectorAll(".liveonly").forEach((el) => el.classList.add("hidden"));
+    $("periodText").textContent = quarterLabel(state.start);
+    render();
+    state.live = await ping();
+    $("modeDot").className = "dot " + (state.live ? "live" : "snap");
+    const asOf = fmtTime(dataAsOf(Object.values(data)));
+    $("modeText").innerHTML = state.live ? "<b>Live</b> · connected to TARIC" : `<b>Data as of ${asOf}</b> · snapshot file`;
+    $("periodText").textContent = `Quota period: ${quarterLabel(state.start)}`;
+    showGlobalWarnings();
+    if (!state.live) return;
+    document.querySelectorAll(".liveonly").forEach((el) => el.classList.remove("hidden"));
+    // local server.py only; the Azure website has no saved last values or file export
+    const local = /^(127\.0\.0\.1|localhost)$/.test(location.hostname);
+    if (local) await loadLast(); else $("exportBtn").classList.add("hidden");
+    render();
+    if (state.tab === "turkiye") $("trRefresh").click();
+    else if (state.tab === "category") autoFetchCategory();
+    else if (state.tab === "country") autoFetchCountry();
+  })();
+})();
+</script>
+</body>
+</html>
