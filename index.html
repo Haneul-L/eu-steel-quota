@@ -371,7 +371,7 @@
         <h4>Data source &amp; freshness</h4>
         <ul>
           <li>Values come from the public EU TARIC quota pages. Click any order number to open the official page.</li>
-          <li>The header shows <b>"Data as of"</b>. A shared file is a snapshot — it does not update by itself. Ask the Istanbul office for a newer file if it is old.</li>
+          <li>The header shows when the data was last updated. The website updates itself every 2 hours (06–18 Istanbul time, Mon–Fri). A downloaded file is a snapshot and does not update by itself.</li>
           <li>Order list and base volumes: Regulation (EU) 2026/1457, Annex I (valid 1 Jul – 31 Dec 2026). From 2027 the regime changes and this list must be updated.</li>
         </ul>
       </div>
@@ -835,6 +835,17 @@ window.QUOTA_CATALOG = {
       if (j.start === state.start) Object.values(j.items || {}).forEach((it) => merge(it, "snapshot"));
     } catch {}
   }
+  // GitHub Pages: data/latest.json is refreshed by a scheduled GitHub Action
+  async function loadPublished() {
+    try {
+      const r = await fetch("data/latest.json", { cache: "no-store" });
+      if (!r.ok) return null;
+      const j = await r.json();
+      if (j.start !== state.start) return null;
+      Object.values(j.items || {}).forEach((it) => merge(it, "snapshot"));
+      return j.updatedAt || null;
+    } catch { return null; }
+  }
   function metaEl() { return $({ turkiye: "trMeta", country: "ctryMeta", category: "catMeta", all: "allMeta" }[state.tab] || "trMeta"); }
   function setNotice(kind, html) { metaEl().innerHTML = `<div class="notice ${kind}">${html}</div>`; }
 
@@ -1166,7 +1177,9 @@ window.QUOTA_CATALOG = {
     if (today > CAT.source.period[1]) msgs.push(`This dashboard covers <b>${quarterLabel(CAT.source.period[0])}</b> (until ${fmtDate(CAT.source.period[1])}). A new quarter has started — the figures below are out of date.`);
     if (!state.live) {
       const age = (Date.now() - new Date(dataAsOf(Object.values(data)))) / 864e5;
-      if (age > 3) msgs.push(`Data is ${Math.floor(age)} days old. Ask the Istanbul office for an updated file, or check TARIC directly via the order links.`);
+      if (age > 3) msgs.push(state.published
+        ? `Data is ${Math.floor(age)} days old — the automatic update may have stopped. Please tell the Istanbul office, and check TARIC directly via the order links.`
+        : `Data is ${Math.floor(age)} days old. Ask the Istanbul office for an updated file, or check TARIC directly via the order links.`);
     }
     $("globalNotice").innerHTML = msgs.join("<br>");
     $("globalNotice").classList.toggle("hidden", !msgs.length);
@@ -1178,16 +1191,20 @@ window.QUOTA_CATALOG = {
     $("periodText").textContent = quarterLabel(state.start);
     render();
     state.live = await ping();
-    $("modeDot").className = "dot " + (state.live ? "live" : "snap");
+    if (!state.live && location.protocol.startsWith("http")) {
+      state.published = await loadPublished();
+      if (state.published) render();
+    }
+    $("modeDot").className = "dot " + (state.live || state.published ? "live" : "snap");
     const asOf = fmtTime(dataAsOf(Object.values(data)));
-    $("modeText").innerHTML = state.live ? "<b>Live</b> · connected to TARIC" : `<b>Data as of ${asOf}</b> · snapshot file`;
+    $("modeText").innerHTML = state.live ? "<b>Live</b> · connected to TARIC"
+      : state.published ? `<b>Updated ${fmtTime(state.published)}</b> · auto-updates every 2 h (06–18 Istanbul, Mon–Fri)`
+      : `<b>Data as of ${asOf}</b> · snapshot file`;
     $("periodText").textContent = `Quota period: ${quarterLabel(state.start)}`;
     showGlobalWarnings();
     if (!state.live) return;
     document.querySelectorAll(".liveonly").forEach((el) => el.classList.remove("hidden"));
-    // local server.py only; the Azure website has no saved last values or file export
-    const local = /^(127\.0\.0\.1|localhost)$/.test(location.hostname);
-    if (local) await loadLast(); else $("exportBtn").classList.add("hidden");
+    await loadLast();
     render();
     if (state.tab === "turkiye") $("trRefresh").click();
     else if (state.tab === "category") autoFetchCategory();
